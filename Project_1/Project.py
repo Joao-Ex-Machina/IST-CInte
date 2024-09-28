@@ -7,47 +7,39 @@ import pandas as pd
 FS = FuzzySystem()
 
 # Antecedents
-#Subsystem1
-M1 = FuzzySet(function=Triangular_MF(a=0,b=0,c=0.58), term="low")
-M2 = FuzzySet(function=Triangular_MF(a=0.42,b=1,c=1), term="high")
-FS.add_linguistic_variable("Memory", LinguisticVariable([M1, M2], universe_of_discourse=[0, 1]))
+# HW Subsystem
+M1 = FuzzySet( points=[[0, 1],  [0.25, 0]], term="low" )
+M2 = FuzzySet( points=[[0.2, 0], [0.35, 1], [0.60,0]], term="average" )
+M3 = FuzzySet( points=[[0.5, 0], [0.70, 1.]],term="high" )
+M4 = FuzzySet( points=[[0.85, 0], [1, 1]], term="critical" )
+FS.add_linguistic_variable("Memory", LinguisticVariable([M1, M2, M3, M4], universe_of_discourse=[0, 1]))
 
-P1 = FuzzySet(function=Triangular_MF(a=0,b=0,c=0.58), term="low")
-P2 = FuzzySet(function=Triangular_MF(a=0.42,b=1,c=1), term="high")
-FS.add_linguistic_variable("Processor", LinguisticVariable([P1, P2], universe_of_discourse=[0, 1]))
+P1 = FuzzySet( points=[[0, 1],  [0.25, 0]], term="low" )
+P2 = FuzzySet( points=[[0.2, 0], [0.35, 1], [0.60,0]], term="average" )
+P3 = FuzzySet( points=[[0.5, 0], [0.70, 1.]],term="high" )
+P4 = FuzzySet( points=[[0.85, 0], [1, 1]], term="critical" )
+FS.add_linguistic_variable("Processor", LinguisticVariable([P1, P2, P3, P4], universe_of_discourse=[0, 1]))
 
-VM1 = FuzzySet(function=Triangular_MF(a=0,b=0,c=0.58), term="low")
-VM2 = FuzzySet(function=Triangular_MF(a=0.42,b=1,c=1), term="high")
-FS.add_linguistic_variable("VMemory", LinguisticVariable([VM1, VM2], universe_of_discourse=[0, 1]))
+SP1 = FuzzySet(function=Triangular_MF(a=0,b=0,c=0.375), term="low")
+SP2 = FuzzySet(function=Triangular_MF(a=0.125,b=0.5,c=0.75), term="balanced")
+SP3 = FuzzySet(function=Triangular_MF(a=0.675,b=0.85,c=1), term="high")
+FS.add_linguistic_variable("HW_Usage", LinguisticVariable([SP1, SP2, SP3], universe_of_discourse=[0, 1]))
 
-VP1 = FuzzySet(function=Triangular_MF(a=0,b=0,c=0.58), term="low")
-VP2 = FuzzySet(function=Triangular_MF(a=0.42,b=1,c=1), term="high")
-FS.add_linguistic_variable("VProcessor", LinguisticVariable([VP1, VP2], universe_of_discourse=[0, 1]))
+# HW Subsystem Rules
 
-SP1 = FuzzySet(function=Triangular_MF(a=0,b=0,c=0.375), term="bad")
-SP2 = FuzzySet(function=Triangular_MF(a=0.125,b=0.5,c=0.875), term="average")
-SP3 = FuzzySet(function=Triangular_MF(a=0.675,b=1,c=1), term="good")
-FS.add_linguistic_variable("Performance", LinguisticVariable([SP1, SP2, SP3], universe_of_discourse=[0, 1]))
+R_CRITICAL = "IF (Memory IS critical) OR (Processor IS critical) THEN (HW_Usage IS high)"
 
-#Subsystem Rule1
+R_HIGH = "IF (Processor IS high) AND (Memory IS high) THEN (HW_Usage IS high)"
 
-R1 = "IF (Memory IS low) AND (Processor IS low) THEN (Performance IS good)"
-R2 = "IF (Memory IS low) AND (Processor IS high) THEN (Performance IS average)"
-R3 = "IF (Memory IS high) AND (Processor IS low) THEN (Performance IS average)"
-R4 = "IF (Memory IS high) AND (Processor IS high) THEN (Performance IS bad)"
-R5 = "IF (VMemory IS low) AND (VProcessor IS low) THEN (Performance IS good)"
-R6 = "IF (VMemory IS low) AND (VProcessor IS high) THEN (Performance IS average)"
-R7 = "IF (VMemory IS high) AND (VProcessor IS low) THEN (Performance IS average)"
-R8 = "IF (VMemory IS high) AND (VProcessor IS high) THEN (Performance IS bad)"
-R9 = "IF (Memory IS low) AND (VProcessor IS low) THEN (Performance IS good)"
-R10 = "IF (Memory IS low) AND (VProcessor IS high) THEN (Performance IS average)"
-R11 = "IF (Memory IS high) AND (VProcessor IS low) THEN (Performance IS average)"
-R12 = "IF (Memory IS high) AND (VProcessor IS high) THEN (Performance IS bad)"
-R13 = "IF (VMemory IS low) AND (Processor IS low) THEN (Performance IS good)"
-R14 = "IF (VMemory IS low) AND (Processor IS high) THEN (Performance IS average)"
-R15 = "IF (VMemory IS high) AND (Processor IS low) THEN (Performance IS average)"
-R16 = "IF (VMemory IS high) AND (Processor IS high) THEN (Performance IS bad)"
-FS.add_rules([R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, R14, R15, R16])
+R_BAL1 = "IF (Processor IS average) AND ((Memory IS average) OR (Memory IS high)) THEN (HW_Usage IS balanced)"
+R_BAL2 ="IF (Memory IS average) AND ((Processor IS average) OR (Processor IS high)) THEN (HW_Usage IS balanced)"
+
+R_LOW1 = "IF (Memory IS low) AND (NOT(Processor IS critical)) THEN (HW_Usage IS low)"
+R_LOW2 = "IF (Memory IS low) AND (NOT(Processor IS critical)) THEN (HW_Usage IS low)"
+
+
+
+FS.add_rules([R_CRITICAL, R_HIGH, R_BAL1, R_BAL2, R_LOW1, R_LOW2])
 
 #Subsystem2
 INP1 = FuzzySet(function=Triangular_MF(a=0,b=0,c=0.58), term="low")
@@ -140,33 +132,33 @@ CLP2 = FuzzySet(function=Triangular_MF(a=-0.75,b=0,c=0.75), term="keep")
 CLP3 = FuzzySet(function=Triangular_MF(a=0.25,b=1,c=1), term="decrease")
 FS.add_linguistic_variable("CLP", LinguisticVariable([CLP1, CLP2, CLP3], universe_of_discourse=[-1, 1]))
 
-R49 = "IF (NetworkSpeed IS good) AND (Network IS good) AND (Performance IS good) THEN (CLP IS decrease)"
-R50 = "IF (NetworkSpeed IS good) AND (Network IS good) AND (Performance IS average) THEN (CLP IS decrease)"
-R51 = "IF (NetworkSpeed IS good) AND (Network IS good) AND (Performance IS bad) THEN (CLP IS increase)"
-R52 = "IF (NetworkSpeed IS good) AND (Network IS average) AND (Performance IS good) THEN (CLP IS decrease)"
-R53 = "IF (NetworkSpeed IS good) AND (Network IS average) AND (Performance IS average) THEN (CLP IS keep)"
-R54 = "IF (NetworkSpeed IS good) AND (Network IS average) AND (Performance IS bad) THEN (CLP IS increase)"
-R55 = "IF (NetworkSpeed IS good) AND (Network IS bad) AND (Performance IS good) THEN (CLP IS increase)"
-R56 = "IF (NetworkSpeed IS good) AND (Network IS bad) AND (Performance IS average) THEN (CLP IS increase)"
-R57 = "IF (NetworkSpeed IS good) AND (Network IS bad) AND (Performance IS bad) THEN (CLP IS increase)"
-R58 = "IF (NetworkSpeed IS average) AND (Network IS good) AND (Performance IS good) THEN (CLP IS decrease)"
-R59 = "IF (NetworkSpeed IS average) AND (Network IS good) AND (Performance IS average) THEN (CLP IS keep)"
-R60 = "IF (NetworkSpeed IS average) AND (Network IS good) AND (Performance IS bad) THEN (CLP IS increase)"
-R61 = "IF (NetworkSpeed IS average) AND (Network IS average) AND (Performance IS good) THEN (CLP IS keep)"
-R62 = "IF (NetworkSpeed IS average) AND (Network IS average) AND (Performance IS average) THEN (CLP IS keep)"
-R63 = "IF (NetworkSpeed IS average) AND (Network IS average) AND (Performance IS bad) THEN (CLP IS increase)"
-R64 = "IF (NetworkSpeed IS average) AND (Network IS bad) AND (Performance IS good) THEN (CLP IS increase)"
-R65 = "IF (NetworkSpeed IS average) AND (Network IS bad) AND (Performance IS average) THEN (CLP IS increase)"
-R66 = "IF (NetworkSpeed IS average) AND (Network IS bad) AND (Performance IS bad) THEN (CLP IS increase)"
-R67 = "IF (NetworkSpeed IS bad) AND (Network IS good) AND (Performance IS good) THEN (CLP IS increase)"
-R68 = "IF (NetworkSpeed IS bad) AND (Network IS good) AND (Performance IS average) THEN (CLP IS increase)"
-R69 = "IF (NetworkSpeed IS bad) AND (Network IS good) AND (Performance IS bad) THEN (CLP IS increase)"
-R70 = "IF (NetworkSpeed IS bad) AND (Network IS average) AND (Performance IS good) THEN (CLP IS increase)"
-R71 = "IF (NetworkSpeed IS bad) AND (Network IS average) AND (Performance IS average) THEN (CLP IS increase)"
-R72 = "IF (NetworkSpeed IS bad) AND (Network IS average) AND (Performance IS bad) THEN (CLP IS increase)"
-R73 = "IF (NetworkSpeed IS bad) AND (Network IS bad) AND (Performance IS good) THEN (CLP IS increase)"
-R74 = "IF (NetworkSpeed IS bad) AND (Network IS bad) AND (Performance IS average) THEN (CLP IS increase)"
-R75 = "IF (NetworkSpeed IS bad) AND (Network IS bad) AND (Performance IS bad) THEN (CLP IS increase)"
+R49 = "IF (NetworkSpeed IS good) AND (Network IS good) AND (HW_Usage IS high) THEN (CLP IS decrease)"
+R50 = "IF (NetworkSpeed IS good) AND (Network IS good) AND (HW_Usage IS balanced) THEN (CLP IS decrease)"
+R51 = "IF (NetworkSpeed IS good) AND (Network IS good) AND (HW_Usage IS low) THEN (CLP IS increase)"
+R52 = "IF (NetworkSpeed IS good) AND (Network IS average) AND (HW_Usage IS high) THEN (CLP IS decrease)"
+R53 = "IF (NetworkSpeed IS good) AND (Network IS average) AND (HW_Usage IS balanced) THEN (CLP IS keep)"
+R54 = "IF (NetworkSpeed IS good) AND (Network IS average) AND (HW_Usage IS low) THEN (CLP IS increase)"
+R55 = "IF (NetworkSpeed IS good) AND (Network IS bad) AND (HW_Usage IS high) THEN (CLP IS increase)"
+R56 = "IF (NetworkSpeed IS good) AND (Network IS bad) AND (HW_Usage IS balanced) THEN (CLP IS increase)"
+R57 = "IF (NetworkSpeed IS good) AND (Network IS bad) AND (HW_Usage IS low) THEN (CLP IS increase)"
+R58 = "IF (NetworkSpeed IS average) AND (Network IS good) AND (HW_Usage IS high) THEN (CLP IS decrease)"
+R59 = "IF (NetworkSpeed IS average) AND (Network IS good) AND (HW_Usage IS balanced) THEN (CLP IS keep)"
+R60 = "IF (NetworkSpeed IS average) AND (Network IS good) AND (HW_Usage IS low) THEN (CLP IS increase)"
+R61 = "IF (NetworkSpeed IS average) AND (Network IS average) AND (HW_Usage IS high) THEN (CLP IS keep)"
+R62 = "IF (NetworkSpeed IS average) AND (Network IS average) AND (HW_Usage IS balanced) THEN (CLP IS keep)"
+R63 = "IF (NetworkSpeed IS average) AND (Network IS average) AND (HW_Usage IS low) THEN (CLP IS increase)"
+R64 = "IF (NetworkSpeed IS average) AND (Network IS bad) AND (HW_Usage IS high) THEN (CLP IS increase)"
+R65 = "IF (NetworkSpeed IS average) AND (Network IS bad) AND (HW_Usage IS balanced) THEN (CLP IS increase)"
+R66 = "IF (NetworkSpeed IS average) AND (Network IS bad) AND (HW_Usage IS low) THEN (CLP IS increase)"
+R67 = "IF (NetworkSpeed IS bad) AND (Network IS good) AND (HW_Usage IS high) THEN (CLP IS increase)"
+R68 = "IF (NetworkSpeed IS bad) AND (Network IS good) AND (HW_Usage IS balanced) THEN (CLP IS increase)"
+R69 = "IF (NetworkSpeed IS bad) AND (Network IS good) AND (HW_Usage IS low) THEN (CLP IS increase)"
+R70 = "IF (NetworkSpeed IS bad) AND (Network IS average) AND (HW_Usage IS high) THEN (CLP IS increase)"
+R71 = "IF (NetworkSpeed IS bad) AND (Network IS average) AND (HW_Usage IS balanced) THEN (CLP IS increase)"
+R72 = "IF (NetworkSpeed IS bad) AND (Network IS average) AND (HW_Usage IS low) THEN (CLP IS increase)"
+R73 = "IF (NetworkSpeed IS bad) AND (Network IS bad) AND (HW_Usage IS high) THEN (CLP IS increase)"
+R74 = "IF (NetworkSpeed IS bad) AND (Network IS bad) AND (HW_Usage IS balanced) THEN (CLP IS increase)"
+R75 = "IF (NetworkSpeed IS bad) AND (Network IS bad) AND (HW_Usage IS low) THEN (CLP IS increase)"
 FS.add_rules([R49, R50, R51, R52, R53, R54, R55, R56, R57, R58, R59, R60, R61, R62, R63, R64, R65, R66, R67, R68, R69, R70, R71, R72, R73, R74, R75])
 
 df = pd.read_csv('CINTE24-25_Proj1_SampleData.csv')
@@ -188,11 +180,11 @@ for i in range(len(input_data)):
     FS.set_variable("VBandwidth", input_data[i][10])
     FS.set_variable("VLatency", input_data[i][11])
     
-    Performance = FS.Mamdani_inference(["Performance"]) 
+    HW_Usage = FS.Mamdani_inference(["HW_Usage"]) 
     Network = FS.Mamdani_inference(["Network"])
     NetworkSpeed = FS.Mamdani_inference(["NetworkSpeed"])
     
-    FS.set_variable("Performance", Performance["Performance"])
+    FS.set_variable("HW_Usage", HW_Usage["HW_Usage"])
     FS.set_variable("Network", Network["Network"])
     FS.set_variable("NetworkSpeed", NetworkSpeed["NetworkSpeed"])
     
