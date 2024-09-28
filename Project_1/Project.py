@@ -127,9 +127,9 @@ R48 = "IF (VBandwidth IS high) AND (Latency IS high) THEN (NetworkSpeed IS avera
 FS.add_rules([R33, R34, R35, R36, R37, R38, R39, R40, R41, R42, R43, R44, R45, R46, R47, R48])
 
 # Consequents
-CLP1 = FuzzySet(function=Triangular_MF(a=-1,b=-1,c=-0.25), term="increase")
-CLP2 = FuzzySet(function=Triangular_MF(a=-0.75,b=0,c=0.75), term="keep")
-CLP3 = FuzzySet(function=Triangular_MF(a=0.25,b=1,c=1), term="decrease")
+CLP1 = FuzzySet(function=Triangular_MF(a=-1,b=0,c=0), term="decrease")
+CLP2 = FuzzySet(function=Triangular_MF(a=0,b=0,c=0), term="keep")
+CLP3 = FuzzySet(function=Triangular_MF(a=0,b=0,c=1), term="decrease")
 FS.add_linguistic_variable("CLP", LinguisticVariable([CLP1, CLP2, CLP3], universe_of_discourse=[-1, 1]))
 
 R49 = "IF (NetworkSpeed IS good) AND (Network IS good) AND (HW_Usage IS high) THEN (CLP IS decrease)"
@@ -138,7 +138,7 @@ R51 = "IF (NetworkSpeed IS good) AND (Network IS good) AND (HW_Usage IS low) THE
 R52 = "IF (NetworkSpeed IS good) AND (Network IS average) AND (HW_Usage IS high) THEN (CLP IS decrease)"
 R53 = "IF (NetworkSpeed IS good) AND (Network IS average) AND (HW_Usage IS balanced) THEN (CLP IS keep)"
 R54 = "IF (NetworkSpeed IS good) AND (Network IS average) AND (HW_Usage IS low) THEN (CLP IS increase)"
-R55 = "IF (NetworkSpeed IS good) AND (Network IS bad) AND (HW_Usage IS high) THEN (CLP IS increase)"
+R55 = "IF (NetworkSpeed IS good) AND (Network IS bad) AND (HW_Usage IS high) THEN (CLP IS decrease)"
 R56 = "IF (NetworkSpeed IS good) AND (Network IS bad) AND (HW_Usage IS balanced) THEN (CLP IS increase)"
 R57 = "IF (NetworkSpeed IS good) AND (Network IS bad) AND (HW_Usage IS low) THEN (CLP IS increase)"
 R58 = "IF (NetworkSpeed IS average) AND (Network IS good) AND (HW_Usage IS high) THEN (CLP IS decrease)"
@@ -147,16 +147,16 @@ R60 = "IF (NetworkSpeed IS average) AND (Network IS good) AND (HW_Usage IS low) 
 R61 = "IF (NetworkSpeed IS average) AND (Network IS average) AND (HW_Usage IS high) THEN (CLP IS keep)"
 R62 = "IF (NetworkSpeed IS average) AND (Network IS average) AND (HW_Usage IS balanced) THEN (CLP IS keep)"
 R63 = "IF (NetworkSpeed IS average) AND (Network IS average) AND (HW_Usage IS low) THEN (CLP IS increase)"
-R64 = "IF (NetworkSpeed IS average) AND (Network IS bad) AND (HW_Usage IS high) THEN (CLP IS increase)"
+R64 = "IF (NetworkSpeed IS average) AND (Network IS bad) AND (HW_Usage IS high) THEN (CLP IS decrease)"
 R65 = "IF (NetworkSpeed IS average) AND (Network IS bad) AND (HW_Usage IS balanced) THEN (CLP IS increase)"
 R66 = "IF (NetworkSpeed IS average) AND (Network IS bad) AND (HW_Usage IS low) THEN (CLP IS increase)"
-R67 = "IF (NetworkSpeed IS bad) AND (Network IS good) AND (HW_Usage IS high) THEN (CLP IS increase)"
+R67 = "IF (NetworkSpeed IS bad) AND (Network IS good) AND (HW_Usage IS high) THEN (CLP IS decrease)"
 R68 = "IF (NetworkSpeed IS bad) AND (Network IS good) AND (HW_Usage IS balanced) THEN (CLP IS increase)"
 R69 = "IF (NetworkSpeed IS bad) AND (Network IS good) AND (HW_Usage IS low) THEN (CLP IS increase)"
-R70 = "IF (NetworkSpeed IS bad) AND (Network IS average) AND (HW_Usage IS high) THEN (CLP IS increase)"
+R70 = "IF (NetworkSpeed IS bad) AND (Network IS average) AND (HW_Usage IS high) THEN (CLP IS keep)"
 R71 = "IF (NetworkSpeed IS bad) AND (Network IS average) AND (HW_Usage IS balanced) THEN (CLP IS increase)"
 R72 = "IF (NetworkSpeed IS bad) AND (Network IS average) AND (HW_Usage IS low) THEN (CLP IS increase)"
-R73 = "IF (NetworkSpeed IS bad) AND (Network IS bad) AND (HW_Usage IS high) THEN (CLP IS increase)"
+R73 = "IF (NetworkSpeed IS bad) AND (Network IS bad) AND (HW_Usage IS high) THEN (CLP IS keep)"
 R74 = "IF (NetworkSpeed IS bad) AND (Network IS bad) AND (HW_Usage IS balanced) THEN (CLP IS increase)"
 R75 = "IF (NetworkSpeed IS bad) AND (Network IS bad) AND (HW_Usage IS low) THEN (CLP IS increase)"
 FS.add_rules([R49, R50, R51, R52, R53, R54, R55, R56, R57, R58, R59, R60, R61, R62, R63, R64, R65, R66, R67, R68, R69, R70, R71, R72, R73, R74, R75])
