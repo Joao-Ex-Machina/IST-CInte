@@ -22,12 +22,13 @@ FS.add_linguistic_variable("Processor", LinguisticVariable([P1, P2, P3, P4], uni
 
 SP1 = FuzzySet(function=Triangular_MF(a=0,b=0,c=0.375), term="low")
 SP2 = FuzzySet(function=Triangular_MF(a=0.125,b=0.5,c=0.75), term="balanced")
-SP3 = FuzzySet(function=Triangular_MF(a=0.675,b=0.85,c=1), term="high")
-FS.add_linguistic_variable("HW_Usage", LinguisticVariable([SP1, SP2, SP3], universe_of_discourse=[0, 1]))
+SP3 = FuzzySet(function=Triangular_MF(a=0.675,b=0.75,c=0.85), term="high")
+SP4 = FuzzySet(points=[[0.80, 0], [0.85, 1]], term="critical")
+FS.add_linguistic_variable("HW_Usage", LinguisticVariable([SP1, SP2, SP3, SP4], universe_of_discourse=[0, 1]))
 
 # HW Subsystem Rules
 
-R_CRITICAL = "IF (Memory IS critical) OR (Processor IS critical) THEN (HW_Usage IS high)"
+R_CRITICAL = "IF (Memory IS critical) OR (Processor IS critical) THEN (HW_Usage IS critical)"
 
 R_HIGH = "IF (Processor IS high) AND (Memory IS high) THEN (HW_Usage IS high)"
 
@@ -55,24 +56,28 @@ ONP4 = FuzzySet( points=[[0.75, 0], [1, 1]], term="very_high" )
 FS.add_linguistic_variable("Output", LinguisticVariable([ONP1, ONP2, ONP3, ONP4], universe_of_discourse=[0, 1]))
 
 
-N1 = FuzzySet(function=Triangular_MF(a=0,b=0,c=0.375), term="slow")
-N2 = FuzzySet(function=Triangular_MF(a=0.125,b=0.5,c=0.875), term="average")
-N3 = FuzzySet(function=Triangular_MF(a=0.675,b=1,c=1), term="fast")
+N1 = FuzzySet(function=Triangular_MF(a=0,b=0,c=0.375), term="congested")
+N2 = FuzzySet(function=Triangular_MF(a=0.125,b=0.5,c=0.875), term="balanced")
+N3 = FuzzySet(function=Triangular_MF(a=0.675,b=1,c=1), term="de_congested")
 FS.add_linguistic_variable("Network", LinguisticVariable([N1, N2, N3], universe_of_discourse=[0, 1]))
 
 #Subsystem Rule2
 
-R_FAST1 = "IF NOT(Input IS very_high) AND (Output IS very_high) THEN (Network IS fast)"
-R_FAST2 = "IF ((Input IS low) OR (Input IS average)) AND (Output IS high) THEN (Network IS fast)"
+R_DECON1 = "IF NOT(Input IS very_high) AND (Output IS very_high) THEN (Network IS de_congested)"
+R_DECON2 = "IF (Input IS average) AND (Output IS high) THEN (Network IS de_congested)"
+R_DECON3 = "IF (Input IS low) THEN (Network IS de_congested)"
 
-R_AVG1 = "IF ((Input IS low) OR (Input IS average)) AND (Output IS average) THEN (Network IS average)"
-R_AVG2 = "IF (Input IS high) AND (Output IS high) THEN (Network IS average)"
-R_AVG3 = "IF (Input IS very_high) AND (Output IS very_high) THEN (Network IS average)"
 
-R_SLOW1 = "IF (Output IS low) THEN (Network IS slow)"
-R_SLOW2 = "IF ((Input IS high) OR (Input IS very_high)) AND (Output IS average) THEN (Network IS slow)"
+R_BAL1 = "IF (Input IS average) AND (Output IS average) THEN (Network IS balanced)"
+R_BAL2 = "IF (Input IS high) AND (Output IS high) THEN (Network IS balanced)"
+R_BAL3 = "IF (Input IS very_high) AND (Output IS very_high) THEN (Network IS balanced)"
 
-FS.add_rules([R_FAST1, R_FAST2, R_AVG1, R_AVG2, R_AVG3, R_SLOW1, R_SLOW2])
+R_CON1 = "IF (Output IS low) AND (NOT(Input IS low)) THEN (Network IS congested)"
+R_CON2 = "IF ((Input IS high) OR (Input IS very_high)) AND (Output IS average) THEN (Network IS congested)"
+R_CON3 = "IF (Input IS very_high) AND (Output IS high) THEN (Network IS congested)"
+
+
+FS.add_rules([R_DECON1, R_DECON2, R_DECON3, R_BAL1, R_BAL2, R_BAL3, R_CON1, R_CON2, R_CON3])
 
 #Subsystem3
 
@@ -82,75 +87,57 @@ B3 = FuzzySet( points=[[0.5, 0], [0.70, 1.],[0.85,0]], term="high" )
 B4 = FuzzySet( points=[[0.75, 0], [1, 1]], term="very_high" )
 FS.add_linguistic_variable("Bandwidth", LinguisticVariable([B1, B2, B3, B4], universe_of_discourse=[0, 1]))
 
-L1 = FuzzySet( points=[[0, 1],  [0.25, 0]], term="low" )
-L2 = FuzzySet( points=[[0.2, 0], [0.35, 1], [0.60,0]], term="average" )
-L3 = FuzzySet( points=[[0.5, 0], [0.70, 1.],[0.85,0]], term="high" )
-L4 = FuzzySet( points=[[0.75, 0], [1, 1]], term="very_high" )
-FS.add_linguistic_variable("Latency", LinguisticVariable([L1, L2, L3, L4], universe_of_discourse=[0, 1]))
+NS1 = FuzzySet(function=Triangular_MF(a=0,b=0,c=0.35), term="high")
+NS2 = FuzzySet(function=Triangular_MF(a=0.30,b=0.5,c=0.75), term="balanced")
+NS3 = FuzzySet(function=Triangular_MF(a=0.70,b=1,c=1), term="low")
+FS.add_linguistic_variable("TrueNetCongestion", LinguisticVariable([NS1, NS2, NS3], universe_of_discourse=[0, 1]))
 
-NS1 = FuzzySet(function=Triangular_MF(a=0,b=0,c=0.35), term="slow")
-NS2 = FuzzySet(function=Triangular_MF(a=0.30,b=0.5,c=0.75), term="average")
-NS3 = FuzzySet(function=Triangular_MF(a=0.70,b=1,c=1), term="fast")
-FS.add_linguistic_variable("NetworkSpeed", LinguisticVariable([NS1, NS2, NS3], universe_of_discourse=[0, 1]))
+
 
 #Subsystem Rule3
 
-R_FAST3 = "IF ((Bandwidth IS very_high) OR (Bandwidth IS high)) AND ((Latency IS low) OR (Latency IS average)) THEN (NetworkSpeed IS fast)"
+R_NCON1 = "IF (Network IS congested) AND (NOT(Bandwidth IS very_high)) THEN (TrueNetCongestion IS high)"
+R_NCON2 = "IF (Network IS congested) AND (Bandwidth IS very_high) THEN (TrueNetCongestion IS balanced)" 
 
-R_AVG4 = "IF (Bandwidth IS average) AND ((Latency IS low) OR (Latency IS average)) THEN (NetworkSpeed IS average)"
-R_AVG5 = "IF (Bandwidth IS very_high) AND (Latency IS high) THEN (NetworkSpeed IS average)"
+R_NBAL1 = "IF (Network IS balanced) AND (NOT((Bandwidth IS low) OR (Bandwidth IS very_high))) THEN (TrueNetCongestion IS balanced)"
+R_NBAL2 = "IF (Network IS balanced) AND (Bandwidth IS very_high) THEN (TrueNetCongestion IS low)"
+R_NBAL3 = "IF (Network IS balanced) AND (Bandwidth IS low) THEN (TrueNetCongestion IS high)"
 
-R_SLOW3 = "IF (Bandwidth IS low) OR (Latency IS very_high) THEN (NetworkSpeed IS slow)"
-R_SLOW4 = "IF ((Bandwidth IS average) OR (Bandwidth IS high)) AND (Latency IS high) THEN (NetworkSpeed IS slow)"
+R_NDECON1 = "IF (Network IS de_congested) AND (Bandwidth IS low) THEN (TrueNetCongestion IS balanced)"
+R_NDECON2 = "IF (Network IS de_congested) AND (NOT(Bandwidth IS low)) THEN (TrueNetCongestion IS balanced)" 
 
-FS.add_rules([R_FAST3, R_AVG4, R_AVG5, R_SLOW3, R_SLOW4])
+
+
+FS.add_rules([R_NCON1, R_NCON2, R_NBAL1, R_NBAL2, R_NBAL3, R_NDECON1, R_NDECON2])
+
+# Super-Fuzzy System 
+
+#Big Power variable
+L1 = FuzzySet( points=[[0, 1],  [0.25, 0]], term="low" )
+L2 = FuzzySet( points=[[0.2, 0], [0.35, 1], [0.65,0]], term="average" )
+L3 = FuzzySet( points=[[0.55, 0], [0.8, 1]], term="high" )
+FS.add_linguistic_variable("Latency", LinguisticVariable([L1, L2, L3], universe_of_discourse=[0, 1]))
+
 
 # Consequents
-CLP1 = FuzzySet(function=Triangular_MF(a=-1,b=-1,c=-0.35), term="increase")
+CLP1 = FuzzySet(function=Triangular_MF(a=-1,b=-1,c=-0.35), term="decrease")
 CLP2 = FuzzySet(function=Triangular_MF(a=-0.45,b=0,c=0.45), term="keep")
-CLP3 = FuzzySet(function=Triangular_MF(a=0.35,b=1,c=1), term="decrease")
+CLP3 = FuzzySet(function=Triangular_MF(a=0.35,b=1,c=1), term="increase")
 FS.add_linguistic_variable("CLP", LinguisticVariable([CLP1, CLP2, CLP3], universe_of_discourse=[-1, 1]))
 
-R49 = "IF (NetworkSpeed IS fast) AND (Network IS fast) AND (HW_Usage IS high) THEN (CLP IS decrease)"
-R50 = "IF (NetworkSpeed IS fast) AND (Network IS fast) AND (HW_Usage IS balanced) THEN (CLP IS decrease)"
-R51 = "IF (NetworkSpeed IS fast) AND (Network IS fast) AND (HW_Usage IS low) THEN (CLP IS increase)"
-R52 = "IF (NetworkSpeed IS fast) AND (Network IS average) AND (HW_Usage IS high) THEN (CLP IS decrease)"
-R53 = "IF (NetworkSpeed IS fast) AND (Network IS average) AND (HW_Usage IS balanced) THEN (CLP IS keep)"
-R54 = "IF (NetworkSpeed IS fast) AND (Network IS average) AND (HW_Usage IS low) THEN (CLP IS increase)"
-R55 = "IF (NetworkSpeed IS fast) AND (Network IS slow) AND (HW_Usage IS high) THEN (CLP IS decrease)"
-R56 = "IF (NetworkSpeed IS fast) AND (Network IS slow) AND (HW_Usage IS balanced) THEN (CLP IS increase)"
-R57 = "IF (NetworkSpeed IS fast) AND (Network IS slow) AND (HW_Usage IS low) THEN (CLP IS increase)"
+R_HWLow= "IF (HW_Usage IS low) THEN (CLP IS increase)"
+R_HWCritical= "IF (HW_Usage IS critical) THEN (CLP IS decrease)"
+R_HighLatency1 = "IF (Latency IS high) AND (NOT((HW_Usage IS critical) OR (HW_Usage IS high))) THEN (CLP IS increase)"
+R_HighLatency2 = "IF (Latency IS high) AND (HW_Usage IS high) THEN (CLP IS keep)"
+R_NetCongested = "IF (TrueNetCongestion IS high) AND (NOT((HW_Usage IS low) OR (Latency IS high))) THEN (CLP IS decrease)"
+R_HWBAL = "IF (HW_Usage IS balanced) AND (NOT(TrueNetCongestion IS high)) THEN (CLP IS increase)"
 
-R58 = "IF (NetworkSpeed IS average) AND (Network IS fast) AND (HW_Usage IS high) THEN (CLP IS decrease)"
 
-R59 = "IF (NetworkSpeed IS average) AND (Network IS fast) AND (HW_Usage IS balanced) THEN (CLP IS keep)"
 
-R60 = "IF (NetworkSpeed IS average) AND (Network IS fast) AND (HW_Usage IS low) THEN (CLP IS decrease)"
 
-R61 = "IF (NetworkSpeed IS average) AND (Network IS average) AND (HW_Usage IS high) THEN (CLP IS increase)"
 
-R62 = "IF (NetworkSpeed IS average) AND (Network IS average) AND (HW_Usage IS balanced) THEN (CLP IS decrease)"
 
-R63 = "IF (NetworkSpeed IS average) AND (Network IS average) AND (HW_Usage IS low) THEN (CLP IS increase)"
-R64 = "IF (NetworkSpeed IS average) AND (Network IS slow) AND (HW_Usage IS high) THEN (CLP IS decrease)"
-R65 = "IF (NetworkSpeed IS average) AND (Network IS slow) AND (HW_Usage IS balanced) THEN (CLP IS increase)"
-R66 = "IF (NetworkSpeed IS average) AND (Network IS slow) AND (HW_Usage IS low) THEN (CLP IS increase)"
-
-R67 = "IF (NetworkSpeed IS slow) AND (Network IS fast) AND (HW_Usage IS high) THEN (CLP IS increase)"
-
-R68 = "IF (NetworkSpeed IS slow) AND (Network IS fast) AND (HW_Usage IS balanced) THEN (CLP IS increase)"
-
-R69 = "IF (NetworkSpeed IS slow) AND (Network IS fast) AND (HW_Usage IS low) THEN (CLP IS increase)"
-
-R70 = "IF (NetworkSpeed IS slow) AND (Network IS average) AND (HW_Usage IS high) THEN (CLP IS increase)"
-
-R71 = "IF (NetworkSpeed IS slow) AND (Network IS average) AND (HW_Usage IS balanced) THEN (CLP IS decrease)"
-
-R72 = "IF (NetworkSpeed IS slow) AND (Network IS average) AND (HW_Usage IS low) THEN (CLP IS increase)"
-R73 = "IF (NetworkSpeed IS slow) AND (Network IS slow) AND (HW_Usage IS high) THEN (CLP IS keep)"
-R74 = "IF (NetworkSpeed IS slow) AND (Network IS slow) AND (HW_Usage IS balanced) THEN (CLP IS increase)"
-R75 = "IF (NetworkSpeed IS slow) AND (Network IS slow) AND (HW_Usage IS low) THEN (CLP IS increase)"
-FS.add_rules([R49, R50, R51, R52, R53, R54, R55, R56, R57, R58, R59, R60, R61, R62, R63, R64, R65, R66, R67, R68, R69, R70, R71, R72, R73, R74, R75])
+FS.add_rules([R_HWLow, R_HWCritical, R_HighLatency1, R_HighLatency2, R_NetCongested, R_HWBAL])
 
 df = pd.read_csv('CINTE24-25_Proj1_SampleData.csv')
 
@@ -172,24 +159,26 @@ for i in range(len(input_data)):
 
     
     HW_Usage = FS.Mamdani_inference(["HW_Usage"]) 
+    
     Network = FS.Mamdani_inference(["Network"])
-    NetworkSpeed = FS.Mamdani_inference(["NetworkSpeed"])
+    FS.set_variable("Network", Network["Network"])
+    
+    TrueNetCongestion = FS.Mamdani_inference(["TrueNetCongestion"])
     
     
     
     
     FS.set_variable("HW_Usage", HW_Usage["HW_Usage"])
-    FS.set_variable("Network", Network["Network"])
-    FS.set_variable("NetworkSpeed", NetworkSpeed["NetworkSpeed"])
+    FS.set_variable("TrueNetCongestion", TrueNetCongestion["TrueNetCongestion"])
     
     Result = FS.Mamdani_inference(["CLP"])
-    Intermediates.append([HW_Usage["HW_Usage"], Network["Network"], NetworkSpeed["NetworkSpeed"], Result["CLP"], df.iloc[i, 12]])
+    Intermediates.append([HW_Usage["HW_Usage"], Network["Network"], TrueNetCongestion["TrueNetCongestion"], Result["CLP"], df.iloc[i, 12]])
     
     Error += (df.iloc[i, 12] - Result["CLP"])**2
     # print(str(df.iloc[i, 12]) + "  -  " + str(Result["CLP"]))
     
 df1 = pd.DataFrame(Intermediates)
-df1.columns = ["HW_Usage", "Network", "NetworkSpeed", "Result", "CLPVariation"]
+df1.columns = ["HW_Usage", "Network", "TrueNetCongestion", "Result", "CLPVariation"]
 df.drop(columns=['V_MemoryUsage', 'V_ProcessorLoad','V_InpNetThroughput', 'V_OutNetThroughput', 'V_OutBandwidth','V_Latency','CLPVariation'], inplace=True)
 print(df)
 print(df1)
