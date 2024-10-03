@@ -38,7 +38,7 @@ print(Y_class)
 # Data Split Train 70% Test 30%
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y_class, test_size=0.3, random_state=0)
 
-clf = MLPClassifier(hidden_layer_sizes=(6), activation='relu',solver='lbfgs',max_iter= 200).fit(X_train, Y_train)
+clf = MLPClassifier(hidden_layer_sizes=(6), activation='logistic',solver='sgd',max_iter= 200).fit(X_train, Y_train)
 
 Y_pred = clf.predict(X_test)
 
