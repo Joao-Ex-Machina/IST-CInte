@@ -11,19 +11,19 @@ FS = FuzzySystem()
 M1 = FuzzySet( points=[[0, 1],  [0.25, 0]], term="low" )
 M2 = FuzzySet( points=[[0.2, 0], [0.35, 1], [0.60,0]], term="average" )
 M3 = FuzzySet( points=[[0.5, 0], [0.70, 1.],[0.85,0]],term="high" )
-M4 = FuzzySet( points=[[0.75, 0], [1, 1]], term="critical" )
+M4 = FuzzySet( points=[[0.8, 0], [1, 1]], term="critical" )
 FS.add_linguistic_variable("Memory", LinguisticVariable([M1, M2, M3, M4], universe_of_discourse=[0, 1]))
 
 P1 = FuzzySet( points=[[0, 1],  [0.25, 0]], term="low" )
 P2 = FuzzySet( points=[[0.2, 0], [0.35, 1], [0.60,0]], term="average" )
 P3 = FuzzySet( points=[[0.5, 0], [0.70, 1.],[0.85,0]],term="high" )
-P4 = FuzzySet( points=[[0.75, 0], [1, 1]], term="critical" )
+P4 = FuzzySet( points=[[0.8, 0], [1, 1]], term="critical" )
 FS.add_linguistic_variable("Processor", LinguisticVariable([P1, P2, P3, P4], universe_of_discourse=[0, 1]))
 
-SP1 = FuzzySet(function=Triangular_MF(a=0,b=0,c=0.375), term="low")
-SP2 = FuzzySet(function=Triangular_MF(a=0.125,b=0.5,c=0.75), term="balanced")
+SP1 = FuzzySet(function=Triangular_MF(a=0,b=0,c=0.5), term="low")
+SP2 = FuzzySet(function=Triangular_MF(a=0.35,b=0.5,c=0.70), term="balanced")
 SP3 = FuzzySet(function=Triangular_MF(a=0.675,b=0.75,c=0.85), term="high")
-SP4 = FuzzySet(points=[[0.80, 0], [0.85, 1]], term="critical")
+SP4 = FuzzySet(points=[[0.81, 0], [0.8, 1]], term="critical")
 FS.add_linguistic_variable("HW_Usage", LinguisticVariable([SP1, SP2, SP3, SP4], universe_of_discourse=[0, 1]))
 
 # HW Subsystem Rules
@@ -115,29 +115,36 @@ FS.add_rules([R_NCON1, R_NCON2, R_NBAL1, R_NBAL2, R_NBAL3, R_NDECON1, R_NDECON2]
 #Big Power variable
 L1 = FuzzySet( points=[[0, 1],  [0.25, 0]], term="low" )
 L2 = FuzzySet( points=[[0.2, 0], [0.35, 1], [0.65,0]], term="average" )
-L3 = FuzzySet( points=[[0.55, 0], [0.8, 1]], term="high" )
+L3 = FuzzySet( points=[[0.55, 0], [0.75, 1]], term="high" )
 FS.add_linguistic_variable("Latency", LinguisticVariable([L1, L2, L3], universe_of_discourse=[0, 1]))
 
 
 # Consequents
-CLP1 = FuzzySet(function=Triangular_MF(a=-1,b=-1,c=-0.35), term="decrease")
-CLP2 = FuzzySet(function=Triangular_MF(a=-0.45,b=0,c=0.45), term="keep")
-CLP3 = FuzzySet(function=Triangular_MF(a=0.35,b=1,c=1), term="increase")
+CLP1 = FuzzySet(function=Triangular_MF(a=-1,b=-1,c=-0.3), term="decrease")
+CLP2 = FuzzySet(function=Triangular_MF(a=-0.35,b=0,c=0.35), term="keep")
+CLP3 = FuzzySet(function=Triangular_MF(a=0.3,b=1,c=1), term="increase")
 FS.add_linguistic_variable("CLP", LinguisticVariable([CLP1, CLP2, CLP3], universe_of_discourse=[-1, 1]))
 
 R_HWLow= "IF (HW_Usage IS low) THEN (CLP IS increase)"
 R_HWCritical= "IF (HW_Usage IS critical) THEN (CLP IS decrease)"
-R_HighLatency1 = "IF (Latency IS high) AND (NOT((HW_Usage IS critical) OR (HW_Usage IS high))) THEN (CLP IS increase)"
-R_HighLatency2 = "IF (Latency IS high) AND (HW_Usage IS high) THEN (CLP IS keep)"
+R_HighLatency1 = "IF (Latency IS high) AND (NOT(HW_Usage IS critical)) THEN (CLP IS increase)"
 R_NetCongested = "IF (TrueNetCongestion IS high) AND (NOT((HW_Usage IS low) OR (Latency IS high))) THEN (CLP IS decrease)"
-R_HWBAL = "IF (HW_Usage IS balanced) AND (NOT(TrueNetCongestion IS high)) THEN (CLP IS increase)"
+R_NetDeCongested = "IF (TrueNetCongestion IS low) AND (NOT(HW_Usage IS critical)) THEN (CLP IS increase)"
+R_HWBAL1 = "IF (HW_Usage IS balanced) AND (NOT(TrueNetCongestion IS high)) THEN (CLP IS increase)"
+R_HWBAL2 = "IF (HW_Usage IS balanced) AND ((TrueNetCongestion IS balanced) AND (Latency IS low)) THEN (CLP IS keep)"
+R_HWHi1 = "IF (HW_Usage IS high) AND ((TrueNetCongestion IS balanced) AND (Latency IS low)) THEN (CLP IS decrease)"
+R_HWHi2 = "IF (HW_Usage IS high) AND ((TrueNetCongestion IS balanced) AND (Latency IS average)) THEN (CLP IS keep)"
 
 
 
 
 
 
-FS.add_rules([R_HWLow, R_HWCritical, R_HighLatency1, R_HighLatency2, R_NetCongested, R_HWBAL])
+
+
+
+
+FS.add_rules([R_HWLow, R_HWCritical, R_HighLatency1, R_NetCongested,R_NetDeCongested, R_HWBAL1, R_HWBAL2, R_HWHi1, R_HWHi2])
 
 df = pd.read_csv('CINTE24-25_Proj1_SampleData.csv')
 
