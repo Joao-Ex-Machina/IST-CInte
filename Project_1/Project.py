@@ -8,20 +8,20 @@ FS = FuzzySystem()
 
 # Antecedents
 # HW Subsystem
-M1 = FuzzySet( points=[[0, 1] , [0.4,1], [0.5, 0]], term="low" )
-M2 = FuzzySet( points=[[0.3, 0], [0.5, 1], [0.7,0]], term="average" )
+M1 = FuzzySet( points=[[0, 1] , [0.35,1], [0.5, 0]], term="low" )
+M2 = FuzzySet( points=[[0.3, 0], [0.5, 1], [0.65,0]], term="average" )
 M3 = FuzzySet( points=[[0.6, 0], [0.7, 1.],[0.85,0]],term="high" )
 M4 = FuzzySet( points=[[0.8, 0], [0.85, 1]], term="critical" )
 FS.add_linguistic_variable("Memory", LinguisticVariable([M1, M2, M3, M4], universe_of_discourse=[0, 1]))
 
-P1 = FuzzySet( points=[[0, 1], [0.4,1],  [0.5, 0]], term="low" )
-P2 = FuzzySet( points=[[0.3, 0], [0.5, 1], [0.7,0]], term="average" )
+P1 = FuzzySet( points=[[0, 1], [0.35,1],  [0.5, 0]], term="low" )
+P2 = FuzzySet( points=[[0.3, 0], [0.5, 1], [0.65,0]], term="average" )
 P3 = FuzzySet( points=[[0.6, 0], [0.70, 1.],[0.85,0]],term="high" )
 P4 = FuzzySet( points=[[0.8, 0], [0.85, 1]], term="critical" )
 FS.add_linguistic_variable("Processor", LinguisticVariable([P1, P2, P3, P4], universe_of_discourse=[0, 1]))
 
-SP1 = FuzzySet( points=[[0, 1], [0.4,1],  [0.5, 0]] , term="low")
-SP2 = FuzzySet(function=Triangular_MF(a=0.3,b=0.5,c=0.7), term="balanced")
+SP1 = FuzzySet( points=[[0, 1], [0.35,1],  [0.5, 0]] , term="low")
+SP2 = FuzzySet(function=Triangular_MF(a=0.3, b=0.5, c=0.65) , term="balanced")
 SP3 = FuzzySet(function=Triangular_MF(a=0.6,b=0.7,c=0.8625), term="high")
 SP4 = FuzzySet(points=[[0.85, 0], [0.88, 1]], term="critical")
 FS.add_linguistic_variable("HW_Usage", LinguisticVariable([SP1, SP2, SP3, SP4], universe_of_discourse=[0, 1]))
@@ -58,7 +58,7 @@ FS.add_linguistic_variable("Output", LinguisticVariable([ONP1, ONP2, ONP3, ONP4]
 
 N1 = FuzzySet(function=Triangular_MF(a=0,b=0,c=0.375), term="congested")
 N2 = FuzzySet(function=Triangular_MF(a=0.25,b=0.5,c=0.75), term="balanced")
-N3 = FuzzySet(function=Triangular_MF(a=0.675,b=1,c=1), term="de_congested")
+N3 = FuzzySet(function=Triangular_MF(a=0.675,b=0.8,c=1), term="de_congested")
 FS.add_linguistic_variable("Network", LinguisticVariable([N1, N2, N3], universe_of_discourse=[0, 1]))
 
 #Subsystem Rule2
@@ -114,8 +114,8 @@ FS.add_rules([R_NCON1, R_NCON2, R_NBAL1, R_NBAL2, R_NBAL3, R_NDECON1, R_NDECON2]
 
 #Big Power variable
 L1 = FuzzySet( points=[[0, 1],  [0.3, 0]], term="low" )
-L2 = FuzzySet( points=[[0.25, 0], [0.5, 1], [0.7,0]], term="average" )
-L3 = FuzzySet( points=[[0.675, 0], [0.8, 1]], term="high" )
+L2 = FuzzySet( points=[[0.25, 0], [0.5, 1], [0.8,0]], term="average" )
+L3 = FuzzySet( points=[[0.65, 0] ,[0.8, 1]], term="high" )
 FS.add_linguistic_variable("Latency", LinguisticVariable([L1, L2, L3], universe_of_discourse=[0, 1]))
 
 
