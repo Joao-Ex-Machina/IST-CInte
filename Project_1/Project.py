@@ -8,8 +8,8 @@ FS = FuzzySystem()
 
 # Antecedents
 # HW Subsystem
-M1 = FuzzySet( points=[[0, 1] , [0.3, 0]], term="low" )
-M2 = FuzzySet( points=[[0.3, 0], [0.5, 1], [0.65,0]], term="average" )
+M1 = FuzzySet( points=[[0, 1] , [0.30, 0]], term="low" )
+M2 = FuzzySet( points=[[0.25, 0], [0.5, 1], [0.65,0]], term="average" )
 M3 = FuzzySet( points=[[0.55, 0], [0.7, 1.],[0.85,0]],term="high" )
 M4 = FuzzySet( points=[[0.8, 0], [0.85, 1]], term="critical" )
 FS.add_linguistic_variable("Memory", LinguisticVariable([M1, M2, M3, M4], universe_of_discourse=[0, 1]))
@@ -36,7 +36,7 @@ R_BAL1 = "IF (Processor IS average) AND ((Memory IS average) OR (Memory IS high)
 R_BAL2 ="IF (Memory IS average) AND ((Processor IS average) OR (Processor IS high)) THEN (HW_Usage IS balanced)"
 
 R_LOW1 = "IF (Memory IS low) AND (NOT(Processor IS critical)) THEN (HW_Usage IS low)"
-R_LOW2 = "IF (Memory IS low) AND (NOT(Processor IS critical)) THEN (HW_Usage IS low)"
+R_LOW2 = "IF (Processor IS low) AND (NOT(Memory IS critical)) THEN (HW_Usage IS low)"
 
 
 
@@ -146,23 +146,34 @@ R_HWHi2 = "IF (HW_Usage IS high) AND ((TrueNetCongestion IS balanced) AND (Laten
 
 FS.add_rules([R_HWLow, R_HWCritical, R_HighLatency1, R_NetCongested,R_NetDeCongested, R_HWBAL1, R_HWBAL2, R_HWHi1, R_HWHi2])
 
-df = pd.read_csv('CINTE24-25_Proj1_SampleData.csv')
-
+# df = pd.read_csv('Project_1\\CINTE24-25_Proj1_SampleData.csv')
+df = pd.read_csv('Project_1\\Random_IoT_Data_With_CLP-1.csv')
 input_data = df.iloc[:, :12].values.tolist()
 
 Error = 0
 Intermediates = []
 for i in range(len(input_data)):
+    # FS.set_variable("Memory", input_data[i][0])
+    # FS.set_variable("Processor", input_data[i][1])
+    
+    
+    # FS.set_variable("Input", input_data[i][4])
+    # FS.set_variable("Output", input_data[i][5])
+    
+    
+    # FS.set_variable("Bandwidth", input_data[i][8])
+    # FS.set_variable("Latency", input_data[i][9])
+    
     FS.set_variable("Memory", input_data[i][0])
     FS.set_variable("Processor", input_data[i][1])
     
     
-    FS.set_variable("Input", input_data[i][4])
-    FS.set_variable("Output", input_data[i][5])
+    FS.set_variable("Input", input_data[i][2])
+    FS.set_variable("Output", input_data[i][3])
     
     
-    FS.set_variable("Bandwidth", input_data[i][8])
-    FS.set_variable("Latency", input_data[i][9])
+    FS.set_variable("Bandwidth", input_data[i][4])
+    FS.set_variable("Latency", input_data[i][5])
 
     
     HW_Usage = FS.Mamdani_inference(["HW_Usage"]) 
@@ -193,6 +204,14 @@ print(df1)
 MSE = Error/len(input_data)
 print("MSE :",MSE)
 
+array = []
+for i in range(df1.shape[0]):
+    array.append(i)
+    
+plt.scatter(array,df1["Result"],label='Result')
+plt.scatter(array,df1["CLPVariation"],label='CLPVariation')
+plt.legend()
+plt.show()
 
 def plot_fuzzy_set(fuzzy_set, color):
     # Unpack points from the fuzzy set
@@ -206,18 +225,18 @@ def plot_fuzzy_set(fuzzy_set, color):
 colors = ['blue', 'green', 'orange', 'red']
 
 # Plot each fuzzy set with its corresponding color
-plot_fuzzy_set(M1, colors[0])
-plot_fuzzy_set(M2, colors[1])
-plot_fuzzy_set(M3, colors[2])
-plot_fuzzy_set(M4, colors[3])
+# plot_fuzzy_set(SP1, colors[0])
+# plot_fuzzy_set(SP2, colors[1])
+# plot_fuzzy_set(SP3, colors[2])
+# plot_fuzzy_set(SP4, colors[3])
 
-# Add plot labels and legends
-plt.title("Fuzzy Sets")
-plt.xlabel("X (input)")
-plt.ylabel("Membership Degree")
-plt.legend()
+# # Add plot labels and legends
+# plt.title("Fuzzy Sets")
+# plt.xlabel("X (input)")
+# plt.ylabel("Membership Degree")
+# plt.legend()
 
-# Show the plot
-plt.grid(True)
-plt.show()
+# #Show the plot
+# plt.grid(True)
+# plt.show()
 
