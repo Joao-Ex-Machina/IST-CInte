@@ -2,6 +2,7 @@ from simpful import *
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import random
 
 def create_dataset(iteration):
     random_data_set = []
@@ -12,6 +13,7 @@ def create_dataset(iteration):
         random_data_set.append({'Memory':ar[0], 'Processor':ar[1], 'Input':ar[2], 'Output':ar[3], 'Bandwidth':ar[4], 'Latency':ar[5]})
     data_set = pd.DataFrame(random_data_set, columns=['Memory', 'Processor', 'Input', 'Output', 'Bandwidth', 'Latency'])
     return data_set
+
 FS = FuzzySystem()
 
 # Antecedents
@@ -149,7 +151,8 @@ Flag = False
 if(Flag == True):
     randomset = create_dataset(10000)
     DataSet = []
-    for i in range(len(randomset)):
+
+for i in range(len(randomset)):
         FS.set_variable("Memory", randomset.iloc[i, 0])  # Accessing row i, column 0
         FS.set_variable("Processor", randomset.iloc[i, 1])  # Accessing row i, column 1
         FS.set_variable("Input", randomset.iloc[i, 2])  # and so on for the remaining columns
@@ -169,6 +172,7 @@ if(Flag == True):
     DataSet = pd.DataFrame(DataSet, columns=['Memory', 'Processor', 'Input', 'Output', 'Bandwidth', 'Latency', 'CLP'])
     DataSet.to_csv('Project_1\\randomset.csv', index=False)
     print("Saved")
+
 df = pd.read_csv('CINTE24-25_Proj1_SampleData.csv')
 #df = pd.read_csv('Project_1\\Random_IoT_Data_With_CLP.csv')
 input_data = df.iloc[:, :12].values.tolist()
