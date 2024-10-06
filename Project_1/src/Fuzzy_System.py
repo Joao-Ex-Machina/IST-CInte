@@ -130,9 +130,9 @@ FS.add_linguistic_variable("Latency", LinguisticVariable([L1, L2, L3], universe_
 
 
 # Consequents
-CLP1 = FuzzySet(function=Triangular_MF(a=-1,b=-1,c=-0.45), term="decrease")
-CLP2 = FuzzySet(function=Triangular_MF(a=-0.15,b=0,c=0.15), term="keep")
-CLP3 = FuzzySet(function=Triangular_MF(a=0.45,b=1,c=1), term="increase")
+CLP1 = FuzzySet(function=Triangular_MF(a=-1,b=-1,c=-0.5), term="decrease")
+CLP2 = FuzzySet(points=[[-0.55, 0],[-0.15, 0.05] ,[0, 1], [0.15, 0.05],[0.5, 0]], term="keep")
+CLP3 = FuzzySet(function=Triangular_MF(a=0.5,b=1,c=1), term="increase")
 FS.add_linguistic_variable("CLP", LinguisticVariable([CLP1, CLP2, CLP3], universe_of_discourse=[-1, 1]))
 
 R_HWLow= "IF (HW_Usage IS low) THEN (CLP IS increase)"
