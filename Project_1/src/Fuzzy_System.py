@@ -2,7 +2,17 @@ from simpful import *
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import random
 
+def create_dataset(iteration):
+    random_data_set = []
+    
+    for i in range(iteration):
+        ar=random.choices(range(200), k=6)
+        ar = [(ar[i]-100)/100 for i in range(len(ar))]
+        random_data_set.append({'Memory':ar[0], 'Processor':ar[1], 'Input':ar[2], 'Output':ar[3], 'Bandwidth':ar[4], 'Latency':ar[5]})
+    data_set = pd.DataFrame(random_data_set, columns=['Memory', 'Processor', 'Input', 'Output', 'Bandwidth', 'Latency'])
+    return data_set
 
 FS = FuzzySystem()
 
@@ -136,18 +146,35 @@ R_HWBAL2 = "IF (HW_Usage IS balanced) AND ((TrueNetCongestion IS balanced) AND (
 R_HWHi1 = "IF (HW_Usage IS high) AND ((TrueNetCongestion IS balanced) AND (Latency IS low)) THEN (CLP IS decrease)"
 R_HWHi2 = "IF (HW_Usage IS high) AND ((TrueNetCongestion IS balanced) AND (Latency IS average)) THEN (CLP IS keep)"
 
-
-
-
-
-
-
-
-
-
 FS.add_rules([R_HWLow, R_HWCritical, R_HighLatency1, R_NetCongested,R_NetBalDecon,R_NetDeCongested, R_HWBAL1, R_HWBAL2, R_HWHi1, R_HWHi2])
 
-df = pd.read_csv('CINTE24-25_Proj1_SampleData.csv')
+Flag = False
+if(Flag == True):
+    randomset = create_dataset(10000)
+    DataSet = []
+
+    for i in range(len(randomset)):
+        FS.set_variable("Memory", randomset.iloc[i, 0])  # Accessing row i, column 0
+        FS.set_variable("Processor", randomset.iloc[i, 1])  # Accessing row i, column 1
+        FS.set_variable("Input", randomset.iloc[i, 2])  # and so on for the remaining columns
+        FS.set_variable("Output", randomset.iloc[i, 3])
+        FS.set_variable("Bandwidth", randomset.iloc[i, 4])
+        FS.set_variable("Latency", randomset.iloc[i, 5])
+        
+        HW_Usage = FS.Mamdani_inference(["HW_Usage"]) 
+        Network = FS.Mamdani_inference(["Network"])
+        FS.set_variable("Network", Network["Network"])
+        TrueNetCongestion = FS.Mamdani_inference(["TrueNetCongestion"])
+        FS.set_variable("HW_Usage", HW_Usage["HW_Usage"])
+        FS.set_variable("TrueNetCongestion", TrueNetCongestion["TrueNetCongestion"])
+        Result = FS.Mamdani_inference(["CLP"])
+        
+        DataSet.append([randomset.iloc[i, 0], randomset.iloc[i, 1], randomset.iloc[i, 2], randomset.iloc[i, 3], randomset.iloc[i, 4], randomset.iloc[i, 5], Result["CLP"]])
+    DataSet = pd.DataFrame(DataSet, columns=['Memory', 'Processor', 'Input', 'Output', 'Bandwidth', 'Latency', 'CLP'])
+    DataSet.to_csv('Project_1\\randomset.csv', index=False)
+    print("Saved")
+
+df = pd.read_csv('Project_1\\src\\CINTE24-25_Proj1_SampleData.csv')
 #df = pd.read_csv('Project_1\\Random_IoT_Data_With_CLP.csv')
 input_data = df.iloc[:, :12].values.tolist()
 
