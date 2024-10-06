@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import random
-
+import argparse
 def create_dataset(iteration):
     random_data_set = []
     
@@ -145,7 +145,6 @@ R_HWBAL1 = "IF (HW_Usage IS balanced) AND (NOT((TrueNetCongestion IS decongestab
 R_HWBAL2 = "IF (HW_Usage IS balanced) AND ((TrueNetCongestion IS balanced) AND (NOT(Latency IS high))) THEN (CLP IS keep)"
 R_HWHi1 = "IF (HW_Usage IS high) AND ((TrueNetCongestion IS balanced) AND (Latency IS low)) THEN (CLP IS decrease)"
 R_HWHi2 = "IF (HW_Usage IS high) AND ((TrueNetCongestion IS balanced) AND (Latency IS average)) THEN (CLP IS keep)"
-
 FS.add_rules([R_HWLow, R_HWCritical, R_HighLatency1, R_NetCongested,R_NetBalDecon,R_NetDeCongested, R_HWBAL1, R_HWBAL2, R_HWHi1, R_HWHi2])
 
 Flag = False
@@ -170,11 +169,18 @@ if(Flag == True):
         Result = FS.Mamdani_inference(["CLP"])
         
         DataSet.append([randomset.iloc[i, 0], randomset.iloc[i, 1], randomset.iloc[i, 2], randomset.iloc[i, 3], randomset.iloc[i, 4], randomset.iloc[i, 5], Result["CLP"]])
-    DataSet = pd.DataFrame(DataSet, columns=['Memory', 'Processor', 'Input', 'Output', 'Bandwidth', 'Latency', 'CLP'])
-    DataSet.to_csv('Project_1\\randomset.csv', index=False)
-    print("Saved")
+        DataSet = pd.DataFrame(DataSet, columns=['Memory', 'Processor', 'Input', 'Output', 'Bandwidth', 'Latency', 'CLP'])
+        DataSet.to_csv('Project_1\\randomset.csv', index=False)
+        print("Saved")
 
-df = pd.read_csv('Project_1\\src\\CINTE24-25_Proj1_SampleData.csv')
+# Define the default string if no filename is provided
+DEFAULT_FILENAME = "CINTE24-25_Proj1_SampleData.csv"
+parser = argparse.ArgumentParser(description="Process a filename or use a default value.")
+parser.add_argument("filename", nargs="?", default=DEFAULT_FILENAME, help="The file to process")
+args = parser.parse_args()
+datafile = args.filename
+
+df = pd.read_csv(datafile)
 #df = pd.read_csv('Project_1\\Random_IoT_Data_With_CLP.csv')
 input_data = df.iloc[:, :12].values.tolist()
 
@@ -236,8 +242,8 @@ array = []
 for i in range(df1.shape[0]):
     array.append(i)
     
-plt.scatter(array,df1["Result"],label='Result')
-plt.scatter(array,df1["CLPVariation"],label='CLPVariation')
+plt.scatter(array,df1["Result"],label='Computed CLP Var.')
+plt.scatter(array,df1["CLPVariation"],label='Reference CLP Var.')
 plt.legend()
 plt.show()
 
