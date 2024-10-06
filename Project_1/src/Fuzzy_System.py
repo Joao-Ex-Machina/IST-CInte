@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import random
-
+import argparse
 def create_dataset(iteration):
     random_data_set = []
     
@@ -152,7 +152,7 @@ if(Flag == True):
     randomset = create_dataset(10000)
     DataSet = []
 
-for i in range(len(randomset)):
+    for i in range(len(randomset)):
         FS.set_variable("Memory", randomset.iloc[i, 0])  # Accessing row i, column 0
         FS.set_variable("Processor", randomset.iloc[i, 1])  # Accessing row i, column 1
         FS.set_variable("Input", randomset.iloc[i, 2])  # and so on for the remaining columns
@@ -169,11 +169,18 @@ for i in range(len(randomset)):
         Result = FS.Mamdani_inference(["CLP"])
         
         DataSet.append([randomset.iloc[i, 0], randomset.iloc[i, 1], randomset.iloc[i, 2], randomset.iloc[i, 3], randomset.iloc[i, 4], randomset.iloc[i, 5], Result["CLP"]])
-    DataSet = pd.DataFrame(DataSet, columns=['Memory', 'Processor', 'Input', 'Output', 'Bandwidth', 'Latency', 'CLP'])
-    DataSet.to_csv('Project_1\\randomset.csv', index=False)
-    print("Saved")
+        DataSet = pd.DataFrame(DataSet, columns=['Memory', 'Processor', 'Input', 'Output', 'Bandwidth', 'Latency', 'CLP'])
+        DataSet.to_csv('Project_1\\randomset.csv', index=False)
+        print("Saved")
 
-df = pd.read_csv('CINTE24-25_Proj1_SampleData.csv')
+# Define the default string if no filename is provided
+DEFAULT_FILENAME = "CINTE24-25_Proj1_SampleData.csv"
+parser = argparse.ArgumentParser(description="Process a filename or use a default value.")
+parser.add_argument("filename", nargs="?", default=DEFAULT_FILENAME, help="The file to process")
+args = parser.parse_args()
+datafile = args.filename
+
+df = pd.read_csv(datafile)
 #df = pd.read_csv('Project_1\\Random_IoT_Data_With_CLP.csv')
 input_data = df.iloc[:, :12].values.tolist()
 
