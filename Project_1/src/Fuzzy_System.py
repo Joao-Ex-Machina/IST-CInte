@@ -20,9 +20,9 @@ P3 = FuzzySet( points=[[0.6, 0], [0.70, 1.],[0.85,0]],term="high" )
 P4 = FuzzySet( points=[[0.8, 0], [0.85, 1]], term="critical" )
 FS.add_linguistic_variable("Processor", LinguisticVariable([P1, P2, P3, P4], universe_of_discourse=[0, 1]))
 
-SP1 = FuzzySet( points=[[0, 1], [0.35,1],  [0.5, 0]] , term="low")
+SP1 = FuzzySet( points=[[0, 1], [0.35,1],  [0.45, 0]] , term="low")
 SP2 = FuzzySet(function=Triangular_MF(a=0.3, b=0.5, c=0.65) , term="balanced")
-SP3 = FuzzySet(function=Triangular_MF(a=0.6,b=0.7,c=0.8625), term="high")
+SP3 = FuzzySet(function=Triangular_MF(a=0.6,b=0.7,c=0.88), term="high")
 SP4 = FuzzySet(points=[[0.85, 0], [0.88, 1]], term="critical")
 FS.add_linguistic_variable("HW_Usage", LinguisticVariable([SP1, SP2, SP3, SP4], universe_of_discourse=[0, 1]))
 
@@ -83,13 +83,13 @@ FS.add_rules([R_DECON1, R_DECON2, R_DECON3, R_BAL1, R_BAL2, R_BAL3, R_CON1, R_CO
 
 B1 = FuzzySet( points=[[0, 1],  [0.25, 0]], term="low" )
 B2 = FuzzySet( points=[[0.2, 0], [0.4, 1], [0.55,0]], term="average" )
-B3 = FuzzySet( points=[[0.5, 0], [0.6, 1.],[0.7,0]], term="high" )
+B3 = FuzzySet( points=[[0.5, 0], [0.6, 1.],[0.725,0]], term="high" )
 B4 = FuzzySet( points=[[0.65, 0], [0.8, 1]], term="very_high" )
 FS.add_linguistic_variable("Bandwidth", LinguisticVariable([B1, B2, B3, B4], universe_of_discourse=[0, 1]))
 
 TNC1 = FuzzySet(points=[[0, 1], [0.3, 1.],[0.5,0]], term="fullycongested")
-TNC2 = FuzzySet(function=Triangular_MF(a=0.4,b=0.5,c=0.6), term="balanced")
-TNC3 = FuzzySet(function=Triangular_MF(a=0.5,b=0.75,c=1), term="decongestable")
+TNC2 = FuzzySet(function=Triangular_MF(a=0.3,b=0.5,c=0.7), term="balanced")
+TNC3 = FuzzySet(function=Triangular_MF(a=0.5,b=0.7,c=1), term="decongestable")
 FS.add_linguistic_variable("TrueNetCongestion", LinguisticVariable([TNC1, TNC2, TNC3], universe_of_discourse=[0, 1]))
 
 
@@ -113,16 +113,16 @@ FS.add_rules([R_NCON1, R_NCON2, R_NBAL1, R_NBAL2, R_NBAL3, R_NDECON1, R_NDECON2]
 # Super-Fuzzy System 
 
 #Big Power variable
-L1 = FuzzySet( points=[[0, 1],  [0.3, 0]], term="low" )
-L2 = FuzzySet( points=[[0.25, 0], [0.5, 1], [0.8,0]], term="average" )
-L3 = FuzzySet( points=[[0.65, 0] ,[0.8, 1]], term="high" )
+L1 = FuzzySet( points=[[0, 1],  [0.5, 0]], term="low" )
+L2 = FuzzySet( points=[[0.25, 0], [0.5, 1], [0.85,0]], term="average" )
+L3 = FuzzySet( points=[[0.75, 0] ,[0.8, 1]], term="high" )
 FS.add_linguistic_variable("Latency", LinguisticVariable([L1, L2, L3], universe_of_discourse=[0, 1]))
 
 
 # Consequents
-CLP1 = FuzzySet(function=Triangular_MF(a=-1,b=-1,c=-0.3), term="decrease")
-CLP2 = FuzzySet(function=Triangular_MF(a=-0.35,b=0,c=0.45), term="keep")
-CLP3 = FuzzySet(function=Triangular_MF(a=0.4,b=1,c=1), term="increase")
+CLP1 = FuzzySet(function=Triangular_MF(a=-1,b=-1,c=-0.5), term="decrease")
+CLP2 = FuzzySet(function=Triangular_MF(a=-0.15,b=0,c=0.15), term="keep")
+CLP3 = FuzzySet(function=Triangular_MF(a=0.5,b=1,c=1), term="increase")
 FS.add_linguistic_variable("CLP", LinguisticVariable([CLP1, CLP2, CLP3], universe_of_discourse=[-1, 1]))
 
 R_HWLow= "IF (HW_Usage IS low) THEN (CLP IS increase)"
