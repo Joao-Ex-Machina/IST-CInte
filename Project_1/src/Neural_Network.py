@@ -60,24 +60,24 @@ print(f"Class counts (Train): {class_counts_train}")
 
 if(Validation == False):
     clf = MLPRegressor(hidden_layer_sizes=(18,5), activation='logistic',solver='lbfgs',max_iter= 10000,random_state=0)
-    # kf = KFold(n_splits=5, shuffle=True, random_state=42)
-    # # Perform cross-validation with scoring as MSE
-    # mse_scorer = make_scorer(mean_squared_error, greater_is_better=False)  # Negative because lower MSE is better
-    # mse_scores = cross_val_score(clf, X_train, Y_train, cv=kf, scoring=mse_scorer)
+    kf = KFold(n_splits=5, shuffle=True, random_state=42)
+    # Perform cross-validation with scoring as MSE
+    mse_scorer = make_scorer(mean_squared_error, greater_is_better=False)  # Negative because lower MSE is better
+    mse_scores = cross_val_score(clf, X_train, Y_train, cv=kf, scoring=mse_scorer)
 
-    # # Perform cross-validation with scoring as R² (default for regressors)
-    # r2_scores = cross_val_score(clf, X_train, Y_train, cv=kf)
+    # Perform cross-validation with scoring as R² (default for regressors)
+    r2_scores = cross_val_score(clf, X_train, Y_train, cv=kf)
 
     
     
-    # print("Cross-Validated R² Scores: ", r2_scores)
-    # print(f"Mean R²: {np.mean(r2_scores)}")
+    print("Cross-Validated R² Scores: ", r2_scores)
+    print(f"Mean R²: {np.mean(r2_scores)}")
 
-    # print("Cross-Validated MSE Scores (Negative): ", mse_scores)
-    # print(f"Mean MSE: {np.mean(np.abs(mse_scores))}")
+    print("Cross-Validated MSE Scores (Negative): ", mse_scores)
+    print(f"Mean MSE: {np.mean(np.abs(mse_scores))}")
     clf.fit(X_train, Y_train)
-    print ("Training Accuracy: ",clf.score(X_train,Y_train)) # R^2  
-    print("MSE: ", mean_squared_error(Y_train, clf.predict(X_train)))
+    # print ("Training Accuracy: ",clf.score(X_train,Y_train)) # R^2  
+    # print("MSE: ", mean_squared_error(Y_train, clf.predict(X_train)))
 
 if(Validation == True):
     param_grid = {
@@ -127,6 +127,8 @@ print("Test MSE: ", mean_squared_error(Y_test, Y_pred))
 
 Y_test_class = classify_array(Y_test)
 Y_pred_class = classify_array(Y_pred)
+Y_test_counts = Counter(Y_test_class)
+print(f"Test Class counts: {Y_test_counts}")
 confusion_matrix = pd.crosstab(Y_test_class, Y_pred_class, rownames=['Actual'], colnames=['Predicted'])
 
 print(f"Confusion Matrix:\n{confusion_matrix}")
