@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import random
 import argparse
+import seaborn as sns
 def create_dataset(iteration):
     random_data_set = []
     
@@ -48,9 +49,11 @@ R_BAL2 ="IF (Memory IS average) AND ((Processor IS average) OR (Processor IS hig
 R_LOW1 = "IF (Memory IS low) AND (NOT(Processor IS critical)) THEN (HW_Usage IS low)"
 R_LOW2 = "IF (Processor IS low) AND (NOT(Memory IS critical)) THEN (HW_Usage IS low)"
 
-
-
 FS.add_rules([R_CRITICAL, R_HIGH, R_BAL1, R_BAL2, R_LOW1, R_LOW2])
+
+FS.plot_variable("Memory")
+FS.plot_variable("Processor")
+FS.plot_variable("HW_Usage")
 
 #Subsystem2
 INP1 = FuzzySet( points=[[0, 1],  [0.25, 0]], term="low" )
@@ -68,7 +71,7 @@ FS.add_linguistic_variable("Output", LinguisticVariable([ONP1, ONP2, ONP3, ONP4]
 
 N1 = FuzzySet(function=Triangular_MF(a=0,b=0,c=0.375), term="congested")
 N2 = FuzzySet(function=Triangular_MF(a=0.25,b=0.5,c=0.75), term="balanced")
-N3 = FuzzySet(function=Triangular_MF(a=0.675,b=0.8,c=1), term="de_congested")
+N3 = FuzzySet(points=[[0.65, 0], [0.80, 1.],[1,1]], term="de_congested")
 FS.add_linguistic_variable("Network", LinguisticVariable([N1, N2, N3], universe_of_discourse=[0, 1]))
 
 #Subsystem Rule2
@@ -89,6 +92,10 @@ R_CON3 = "IF (Input IS very_high) AND (NOT(Output IS very_high)) THEN (Network I
 
 FS.add_rules([R_DECON1, R_DECON2, R_DECON3, R_BAL1, R_BAL2, R_BAL3, R_CON1, R_CON2, R_CON3])
 
+FS.plot_variable("Input")
+FS.plot_variable("Output")
+FS.plot_variable("Network")
+
 #Subsystem3
 
 B1 = FuzzySet( points=[[0, 1],  [0.25, 0]], term="low" )
@@ -99,7 +106,7 @@ FS.add_linguistic_variable("Bandwidth", LinguisticVariable([B1, B2, B3, B4], uni
 
 TNC1 = FuzzySet(points=[[0, 1], [0.3, 1.],[0.5,0]], term="fullycongested")
 TNC2 = FuzzySet(function=Triangular_MF(a=0.3,b=0.5,c=0.7), term="balanced")
-TNC3 = FuzzySet(function=Triangular_MF(a=0.5,b=0.7,c=1), term="decongestable")
+TNC3 = FuzzySet(points=[[0.5, 0], [0.7, 1.],[1,1]], term="decongestable")
 FS.add_linguistic_variable("TrueNetCongestion", LinguisticVariable([TNC1, TNC2, TNC3], universe_of_discourse=[0, 1]))
 
 
@@ -116,6 +123,9 @@ R_NBAL3 = "IF (Network IS balanced) AND (Bandwidth IS low) THEN (TrueNetCongesti
 R_NDECON1 = "IF (Network IS de_congested) AND (Bandwidth IS low) THEN (TrueNetCongestion IS decongestable)"
 R_NDECON2 = "IF (Network IS de_congested) AND (NOT(Bandwidth IS low)) THEN (TrueNetCongestion IS balanced)" 
 
+
+FS.plot_variable("Bandwidth")
+FS.plot_variable("TrueNetCongestion")
 
 
 FS.add_rules([R_NCON1, R_NCON2, R_NBAL1, R_NBAL2, R_NBAL3, R_NDECON1, R_NDECON2])
@@ -146,6 +156,10 @@ R_HWBAL2 = "IF (HW_Usage IS balanced) AND ((TrueNetCongestion IS balanced) AND (
 R_HWHi1 = "IF (HW_Usage IS high) AND ((TrueNetCongestion IS balanced) AND (Latency IS low)) THEN (CLP IS decrease)"
 R_HWHi2 = "IF (HW_Usage IS high) AND ((TrueNetCongestion IS balanced) AND (Latency IS average)) THEN (CLP IS keep)"
 FS.add_rules([R_HWLow, R_HWCritical, R_HighLatency1, R_NetCongested,R_NetBalDecon,R_NetDeCongested, R_HWBAL1, R_HWBAL2, R_HWHi1, R_HWHi2])
+
+FS.plot_variable("Latency")
+FS.plot_variable("CLP")
+
 
 Flag = False
 if(Flag == True):
