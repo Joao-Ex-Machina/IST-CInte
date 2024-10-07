@@ -170,6 +170,7 @@ This configuration of the neural network was chosen based on the best performanc
 ### Performance Metrics
 
 We analyze the performance of the neural network model in predicting both regression and classification outcomes using a dataset with a highly imbalanced distribution. To evaluate the model's ability to generalize and accurately predict both numerical values (for regression) and class labels (for classification), we used the following metrics accuracy, mean squared error (MSE), and confusion matrix.
+
 |                   |        | 
 |:-----------------:|:------:|
 | Training Accuracy |  0.98  | 
