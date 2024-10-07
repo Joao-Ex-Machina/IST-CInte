@@ -51,9 +51,9 @@ R_LOW2 = "IF (Processor IS low) AND (NOT(Memory IS critical)) THEN (HW_Usage IS 
 
 FS.add_rules([R_CRITICAL, R_HIGH, R_BAL1, R_BAL2, R_LOW1, R_LOW2])
 
-FS.plot_variable("Memory")
-FS.plot_variable("Processor")
-FS.plot_variable("HW_Usage")
+#FS.plot_variable("Memory")
+#FS.plot_variable("Processor")
+#FS.plot_variable("HW_Usage")
 
 #Subsystem2
 INP1 = FuzzySet( points=[[0, 1],  [0.25, 0]], term="low" )
@@ -92,9 +92,9 @@ R_CON3 = "IF (Input IS very_high) AND (NOT(Output IS very_high)) THEN (Network I
 
 FS.add_rules([R_DECON1, R_DECON2, R_DECON3, R_BAL1, R_BAL2, R_BAL3, R_CON1, R_CON2, R_CON3])
 
-FS.plot_variable("Input")
-FS.plot_variable("Output")
-FS.plot_variable("Network")
+#FS.plot_variable("Input")
+#FS.plot_variable("Output")
+#FS.plot_variable("Network")
 
 #Subsystem3
 
@@ -124,8 +124,8 @@ R_NDECON1 = "IF (Network IS de_congested) AND (Bandwidth IS low) THEN (TrueNetCo
 R_NDECON2 = "IF (Network IS de_congested) AND (NOT(Bandwidth IS low)) THEN (TrueNetCongestion IS balanced)" 
 
 
-FS.plot_variable("Bandwidth")
-FS.plot_variable("TrueNetCongestion")
+#FS.plot_variable("Bandwidth")
+#FS.plot_variable("TrueNetCongestion")
 
 
 FS.add_rules([R_NCON1, R_NCON2, R_NBAL1, R_NBAL2, R_NBAL3, R_NDECON1, R_NDECON2])
@@ -157,8 +157,8 @@ R_HWHi1 = "IF (HW_Usage IS high) AND ((TrueNetCongestion IS balanced) AND (Laten
 R_HWHi2 = "IF (HW_Usage IS high) AND ((TrueNetCongestion IS balanced) AND (Latency IS average)) THEN (CLP IS keep)"
 FS.add_rules([R_HWLow, R_HWCritical, R_HighLatency1, R_NetCongested,R_NetBalDecon,R_NetDeCongested, R_HWBAL1, R_HWBAL2, R_HWHi1, R_HWHi2])
 
-FS.plot_variable("Latency")
-FS.plot_variable("CLP")
+#FS.plot_variable("Latency")
+#FS.plot_variable("CLP")
 
 
 Flag = False
@@ -195,7 +195,7 @@ args = parser.parse_args()
 datafile = args.filename
 
 # df = pd.read_csv(datafile)
-df = pd.read_csv('Project_1\\src\\CINTE24-25_Proj1_SampleData.csv')
+df = pd.read_csv(datafile)
 #df = pd.read_csv('Project_1\\Random_IoT_Data_With_CLP.csv')
 input_data = df.iloc[:, :12].values.tolist()
 
@@ -256,7 +256,8 @@ print("MSE :",MSE)
 array = []
 for i in range(df1.shape[0]):
     array.append(i)
-    
+
+df1["FuzzyCLPVar"].to_csv("TestResult_FISOnly.csv")   
 plt.scatter(array,df1["FuzzyCLPVar"],label='Computed CLP Var.')
 plt.scatter(array,df1["CLPVariation"],label='Reference CLP Var.')
 plt.legend()
@@ -273,7 +274,6 @@ def plot_fuzzy_set(fuzzy_set, color):
 # Assuming M1, M2, M3, and M4 are already defined as FuzzySet objects
 colors = ['blue', 'green', 'orange', 'red']
 
-df1["FuzzyCLPVar"].to_csv("TestResult.csv")
 
 # Plot each fuzzy set with its corresponding color
 # plot_fuzzy_set(SP1, colors[0])

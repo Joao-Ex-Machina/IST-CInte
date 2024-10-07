@@ -155,7 +155,7 @@ The major problem identified in our FIS solution is related to softer transition
 
 ## Neural Network
 
-To build our neural network model, we started by generating a random dataset with 10,000 rows. This dataset was processed using the Fuzzy System, which provided the input features for the neural network. After observing the dataset, we notice that the dataset was imbalenced there were a lot more values between (0.34,1) then (-0.33,0.33). So to balenced it out, we duplicated the entries of the values between (-0.33,0.33). 
+To build our neural network model, we started by generating a random dataset with 10,000 rows. This dataset was processed using the Fuzzy System, which provided the input features for the neural network. After observing the dataset, we notice that it was imbalanced, since there were a lot more values between (0.34,1) then between (-0.33,0.33). In order to balance it out, we duplicated the entries of the values between (-0.33,0.33). 
 
 The dataset was then split into three subsets: 70% of the data was allocated for training, 15% for validation, and the remaining 15% for testing. The training set was used to train the neural network through cross-validation, ensuring that the model generalized well across different splits of the data. After completing cross-validation, we used the validation set to fine-tune and identify the optimal hyperparameters for the neural network. Finally, we evaluated the model's performance on the test set to assess its final predictive accuracy.
 
@@ -170,11 +170,12 @@ This configuration of the neural network was chosen based on the best performanc
 ### Performance Metrics
 
 We analyze the performance of the neural network model in predicting both regression and classification outcomes using a dataset with a highly imbalanced distribution. To evaluate the model's ability to generalize and accurately predict both numerical values (for regression) and class labels (for classification), we used the following metrics accuracy, mean squared error (MSE), and confusion matrix.
-
-| Training Accuracy |  0.98  |
-|    Training MSE   | 0.0085 |
-|   Test Accuracy   |  0.96  |
-|      Test MSE     | 0.0154 |
+|                   |        | 
+|:-----------------:|:------:|
+| Training Accuracy |  0.98  | 
+|   Training MSE    | 0.0085 |
+|   Test Accuracy   |  0.96  | 
+|     Test MSE      | 0.0154 | 
 
 The model achieved a training accuracy of 98% and a training MSE of 0.0085. These metrics indicate a strong fit to the training data, with the low MSE reflecting a high degree of precision in numerical predictions. However, the high accuracy may be influenced by the high frequency of "Increase" class, which is heavily represented in the dataset. 
 
@@ -211,6 +212,10 @@ Overall, the model demonstrated strong classification performance across all cla
 
 When applying the original dataset, we observed a mean squared error (MSE) of 0.016, which is slightly higher than the MSE obtained with the neural network model. This increase in MSE could be attributed to the errors introduced by the Fuzzy System during the generation of the random dataset used for training the neural network. Any inaccuracies in the Fuzzy model might propagate through to the neural network, affecting its training and, consequently, the final predictions.
 
-
-
 ## Conclusions
+
+The Fuzzy System showed overall good performing when classifying the provided dataset. Additional tests where done with different datasets and the FIS did not show  blatant incongruencies.
+
+The neural network model demonstrated strong predictive capabilities, achieving high accuracy and low mean squared error (MSE) in both training and testing. Despite the challenges posed by the imbalanced dataset the model could still effectively generalize unseen data. The results indicate that the model is well-suited for both regression and classification tasks.
+
+Overall the project provided a greater grasp on Fuzzy Sets and Neural Networks, with the additional bonus of providing a insight into a real case-study where such knowledge could be applied.
