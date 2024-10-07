@@ -72,7 +72,7 @@ print(f"Class counts: {class_counts}")
 
 # for i in range(len(Y_class)):
 #    print(f"Value: {Y[i]}, Class: {Y_class[i]}")
-Validation = True
+Validation = False
 
 if(Validation == True):
     # Data Split Train 70% Test 15% Validation 15%
