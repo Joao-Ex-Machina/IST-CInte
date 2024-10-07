@@ -58,7 +58,8 @@ This system outputs a "quantitative" network congestion value, based on the I/O 
 
 ### True Network Congestion FIS
 
-Different from the last FIS the output of this System is not as much a "quantitative" variable as it is and action indicative
+Different from the last FIS the output of this System is not as much a "quantitative" variable as it is an action to be taken indicative.
+
 ![Membership Function for True Net. Congestion Input and Output variables](./images/TNC_FIS_MF.png){}
 
 |   | **Out. Bandwidth** |                 | **Previous Calculated Net.** |                 |
@@ -73,9 +74,12 @@ Different from the last FIS the output of this System is not as much a "quantita
 
 ### Final CLP FIS
 
-Since this System takes 3 inputs we reduced the Latency granularity to 3 linguistic terms, so to simplify the rule set. The High Latency Membership starts growing faster with a latency of 0.8 ms, since this is significative of a very poor network connection.
+Since this System takes 3 inputs we reduced the Latency granularity to 3 linguistic terms, so to simplify the rule set. 
+As such the system-exclusive variables membership function is as presented below:
 
 ![Membership Function for CLP-exclusive Input and Output variables](./images/CLP_FIS_MF.png){width=90%}
+
+The High Latency Membership starts growing faster with a latency of 0.8 ms, since this is significative of a very poor network connection.
 
 The rule set for the final FIS is slightly more complex. By fixing the Latency variable we can obtain the rule set tables.
 For a **Low Latency** value:
@@ -119,13 +123,27 @@ Another clear rule is that when latency is considered too high, priority is give
 
 \pagebreak
 
-### Performance Metrics
+### Performance Metrics and Final Comments
+
+| Computed CLP Variation | Tabled CLP Variation | Error |
+|:----------------------:|:--------------------:|:-----:|
+|        0.834000        |         0.85         | 0.016 |
+|        0.834000        |         0.85         | 0.016 |
+|        0.834000        |         0.80         | 0.034 |
+|        0.700957        |         0.73         | 0.029 |
+|        0.487149        |         0.50         | 0.013 |
+|        0.265243        |         0.12         | 0.145 |
+|       -0.316886        |        -0.31         | 0.007 |
+|       -0.834000        |        -0.65         | 0.184 |
+|       -0.834000        |        -0.82         | 0.014 |
+|       -0.834000        |        -0.85         | 0.016 |
 
 Our fuzzy system solution has a MSE (Mean Squared Error) of **0.0058** , which indicates a seemingly strong performance for the provided dataset.
 The comparison between the computed Computing Load Percentage variation (CLPv) and the given reference can be observed below.
 
 ![Computed CLPv compared to reference CLPv using initial dataset](./images/FuzzyComparison.png){}
 
+The major problem identified in our FIS solution is related to softer transitions - due to our hard limits related to low or critical Hardware Usage, predicted softer CLP transitions are sharper in our solution having less granularity in for greater CLP Increases and Decreases.
 
 
 \newpage
