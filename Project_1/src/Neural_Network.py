@@ -36,6 +36,33 @@ def classify_array(array):
 # Load the data
 data = pd.read_csv('Project_1//src//randomset.csv')
 data.columns = ["Memory","Processor","Input","Output","Bandwidth","Latency","CLP"]
+
+# Check the current counts
+initial_counts = Counter(data['CLP'].apply(lambda x: 'Maintain' if -0.33 <= x <= 0.33 else 'Other'))
+print("Initial 'Maintain' count:", initial_counts['Maintain'])
+
+# Filter rows where CLP is between -0.33 and 0.33 ('Maintain' class)
+maintain_rows = data[(data['CLP'] >= -0.33) & (data['CLP'] <= 0.33)]
+
+# Calculate how many rows need to be added to reach 1000 'Maintain' rows
+n_missing = 1000 - len(maintain_rows)
+
+# If there are not enough 'Maintain' rows, duplicate them
+if n_missing > 0:
+    # Randomly sample with replacement to get additional rows
+    maintain_rows_duplicated = maintain_rows.sample(n=n_missing, replace=True, random_state=0)
+
+    # Append the duplicated rows back to the original dataset
+    data_extended = pd.concat([data, maintain_rows_duplicated])
+
+    # Check the updated counts
+    updated_counts = Counter(data_extended['CLP'].apply(lambda x: 'Maintain' if -0.33 <= x <= 0.33 else 'Other'))
+    print("Updated 'Maintain' count:", updated_counts['Maintain'])
+    data = data_extended
+else:
+    
+    print("No need for duplication, already have 1000 or more 'Maintain' instances.")
+    
 X = data.iloc[:, 0:6].values
 Y = data.iloc[:, 6].values
 
@@ -45,7 +72,7 @@ print(f"Class counts: {class_counts}")
 
 # for i in range(len(Y_class)):
 #    print(f"Value: {Y[i]}, Class: {Y_class[i]}")
-Validation = True
+Validation = False
 
 if(Validation == True):
     # Data Split Train 70% Test 15% Validation 15%
@@ -60,17 +87,14 @@ class_counts_train = Counter(Y_train_class)
 print(f"Class counts (Train): {class_counts_train}")
 
 if(Validation == False):
-    clf = MLPRegressor(hidden_layer_sizes=(18,5), activation='logistic',solver='lbfgs',max_iter= 10000,random_state=0)
+    clf = MLPRegressor(hidden_layer_sizes=(11, 7), activation='relu',solver='lbfgs',learning_rate='adaptive',learning_rate_init=0.1,max_iter= 10000,random_state=0)
     # kf = KFold(n_splits=5, shuffle=True, random_state=42)
-    # # Perform cross-validation with scoring as MSE
+    # Perform cross-validation with scoring as MSE
     # mse_scorer = make_scorer(mean_squared_error, greater_is_better=False)  # Negative because lower MSE is better
     # mse_scores = cross_val_score(clf, X_train, Y_train, cv=kf, scoring=mse_scorer)
 
     # # Perform cross-validation with scoring as R² (default for regressors)
-    # r2_scores = cross_val_score(clf, X_train, Y_train, cv=kf)
-
-    
-    
+    # r2_scores = cross_val_score(clf, X_train, Y_train, cv=kf) 
     # print("Cross-Validated R² Scores: ", r2_scores)
     # print(f"Mean R²: {np.mean(r2_scores)}")
 
@@ -80,12 +104,13 @@ if(Validation == False):
     print ("Training Accuracy: ",clf.score(X_train,Y_train)) # R^2  
     print("MSE: ", mean_squared_error(Y_train, clf.predict(X_train)))
 
-number = 11
+number = 13
 if(Validation == True):
     param_grid = {
-        'hidden_layer_sizes': [(number,1),(number,2),(number,3),(number,4),(number,5),(number,6),(number,7),(number,8),(number,9),(number,number),(number,11),(number,12),(number,13)],
+        'hidden_layer_sizes': [(number, i) for i in range(1, 14)],
         'activation': ['identity', 'logistic', 'tanh', 'relu'],
-        'solver': ['lbfgs', 'sgd', 'adam'],}
+        'solver': ['lbfgs', 'sgd', 'adam'],
+    }
     
     # mlp = MLPRegressor(max_iter=10000, random_state=0)
     # mse_scorer = make_scorer(mean_squared_error, greater_is_better=False)
@@ -104,21 +129,26 @@ if(Validation == True):
     # # Train a final model with the best parameters
     # clf = grid_search.best_estimator_
     
-    Best_Accuracy = 0   
+    Best_Accuracy = 0  
+    Best_MSE = 1000 
     for i in range(param_grid['hidden_layer_sizes'].__len__()):
         for j in range(param_grid['activation'].__len__()):
             for k in range(param_grid['solver'].__len__()):
                 clf = MLPRegressor(hidden_layer_sizes=param_grid['hidden_layer_sizes'][i], activation=param_grid['activation'][j],solver=param_grid['solver'][k],max_iter= 1000,early_stopping=True,random_state=0).fit(X_train, Y_train)
                 # clf = MLPClassifier(hidden_layer_sizes=param_grid['hidden_layer_sizes'][i], activation=param_grid['activation'][j],solver=param_grid['solver'][k],max_iter= 1000).fit(X_train_balanced, Y_train_balanced)
                 accuracy = clf.score(X_val, Y_val)
-                print(f"Accuracy: {accuracy}, Hidden Layer Sizes: {param_grid['hidden_layer_sizes'][i]}, Activation: {param_grid['activation'][j]}, Solver: {param_grid['solver'][k]}")
-                if(accuracy > Best_Accuracy):
-                    Best_Accuracy = accuracy
+                mse = mean_squared_error(Y_val,clf.predict(X_val))
+                print(f"Accuracy: {accuracy}, MSE: {mse}, Hidden Layer Sizes: {param_grid['hidden_layer_sizes'][i]}, Activation: {param_grid['activation'][j]}, Solver: {param_grid['solver'][k]}")
+                if(Best_MSE > mse):
+                    Best_MSE = mse
+                    # Best_Accuracy = accuracy
                     best_param = [param_grid['hidden_layer_sizes'][i],param_grid['activation'][j],param_grid['solver'][k]]
+                    best_clf = clf
 
     #Accuracy: 0.9586666666666667, Hidden Layer Sizes: (10, 4), Activation: relu, Solver: adam
-    print("Best Accuracy: " +  str(Best_Accuracy) + " MSE: " + str(mean_squared_error(Y_val,clf.predict(X_val))) + " Best Parameters: " + str(best_param))
-    clf = MLPRegressor(hidden_layer_sizes=best_param[0], activation=best_param[1],solver=best_param[2],max_iter= 1000,random_state=0).fit(X_train, Y_train) 
+    # clf = MLPRegressor(hidden_layer_sizes=best_param[0], activation=best_param[1],solver=best_param[2],max_iter= 1000,random_state=0).fit(X_train, Y_train) 
+    print("Best Accuracy: " +  str(best_clf.score(X_val,Y_val)) + " MSE: " + str(mean_squared_error(Y_val,best_clf.predict(X_val))) + " Best Parameters: " + str(best_param))
+    clf = best_clf
     
 
 
@@ -150,3 +180,6 @@ for i in range(len(Y_pred2)):
 print("Test MSE: ", mean_squared_error(Y_test2, Y_pred2))
 
 # Best Parameters: {'activation': 'relu', 'hidden_layer_sizes': (10, 12), 'solver': 'lbfgs'}
+# Best Parameters: [(5, 7), 'tanh', 'lbfgs']
+# Best Accuracy: 0.9799664740202303 MSE: 0.0066638403720958505 Best Parameters: [(6, 13), 'relu', 'lbfgs']
+# Best Accuracy: 0.9824400486011752 MSE: 0.005841044316497061 Best Parameters: [(11, 7), 'relu', 'lbfgs']

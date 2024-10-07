@@ -183,9 +183,9 @@ if(Flag == True):
         Result = FS.Mamdani_inference(["CLP"])
         
         DataSet.append([randomset.iloc[i, 0], randomset.iloc[i, 1], randomset.iloc[i, 2], randomset.iloc[i, 3], randomset.iloc[i, 4], randomset.iloc[i, 5], Result["CLP"]])
-        DataSet = pd.DataFrame(DataSet, columns=['Memory', 'Processor', 'Input', 'Output', 'Bandwidth', 'Latency', 'CLP'])
-        DataSet.to_csv('Project_1\\randomset.csv', index=False)
-        print("Saved")
+    DataSet = pd.DataFrame(DataSet, columns=['Memory', 'Processor', 'Input', 'Output', 'Bandwidth', 'Latency', 'CLP'])
+    DataSet.to_csv('Project_1\\randomset.csv', index=False)
+    print("Saved")
 
 # Define the default string if no filename is provided
 DEFAULT_FILENAME = "CINTE24-25_Proj1_SampleData.csv"
@@ -194,7 +194,8 @@ parser.add_argument("filename", nargs="?", default=DEFAULT_FILENAME, help="The f
 args = parser.parse_args()
 datafile = args.filename
 
-df = pd.read_csv(datafile)
+# df = pd.read_csv(datafile)
+df = pd.read_csv('Project_1\\src\\CINTE24-25_Proj1_SampleData.csv')
 #df = pd.read_csv('Project_1\\Random_IoT_Data_With_CLP.csv')
 input_data = df.iloc[:, :12].values.tolist()
 
