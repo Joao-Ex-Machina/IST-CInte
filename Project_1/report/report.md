@@ -155,9 +155,11 @@ The major problem identified in our FIS solution is related to softer transition
 
 ## Neural Network
 
-To build our neural network model, we started by generating a random dataset with 10,000 rows. This dataset was processed using the Fuzzy System, which provided the input features for the neural network.
+To build our neural network model, we started by generating a random dataset with 10,000 rows. This dataset was processed using the Fuzzy System, which provided the input features for the neural network. After observing the dataset, we notice that the dataset was imbalenced there were a lot more values between (0.34,1) then (-0.33,0.33). So to balenced it out, we duplicated the entries of the values between (-0.33,0.33). 
 
 The dataset was then split into three subsets: 70% of the data was allocated for training, 15% for validation, and the remaining 15% for testing. The training set was used to train the neural network through cross-validation, ensuring that the model generalized well across different splits of the data. After completing cross-validation, we used the validation set to fine-tune and identify the optimal hyperparameters for the neural network. Finally, we evaluated the model's performance on the test set to assess its final predictive accuracy.
+
+Them we define a threshold to classify the regression output into 3 classes: Increase (0.34,1) , Maintain (-0.33,0.33) and Decrease (-1, -0.34).
 
 ### Architecture
 
@@ -166,5 +168,49 @@ The final neural network model consisted of six input features and two hidden la
 This configuration of the neural network was chosen based on the best performance observed during the validation phase, ensuring that the final model achieved a strong balance between accuracy and generalization. We then tested this model on the test set to evaluate its real-world performance.
 
 ### Performance Metrics
+
+We analyze the performance of the neural network model in predicting both regression and classification outcomes using a dataset with a highly imbalanced distribution. To evaluate the model's ability to generalize and accurately predict both numerical values (for regression) and class labels (for classification), we used the following metrics accuracy, mean squared error (MSE), and confusion matrix.
+
+| Training Accuracy |  0.98  |
+|    Training MSE   | 0.0069 |
+|   Test Accuracy   |  0.97  |
+|      Test MSE     | 0.0103 |
+
+The model achieved a training accuracy of 98% and a training MSE of 0.0069. These metrics indicate a strong fit to the training data, with the low MSE reflecting a high degree of precision in numerical predictions. However, the high accuracy may be influenced by the high frequency of "Increase" class, which is heavily represented in the dataset. 
+
+On the test set, the model achieved a test accuracy of 97% and a test MSE of 0.0103. The test MSE is slightly higher than the training MSE, which is expected and suggests that the model generalizes well to unseen data. Despite the imbalanced test set, the model was able to maintain high accuracy and relatively low MSE, reflecting good generalization from the training data. 
+
+| Actual / Predicted | Decrease | Increase | Maitain |
+|:------------------:|:--------:|----------|---------|
+|      Decrease      |    227   |     1    |    7    |
+|      Increase      |     3    |   1226   |    6    |
+|      Maintain      |     3    |     6    |   130   |
+
+|          | Precision | Recall | F1 score |
+|:--------:|:---------:|--------|----------|
+| Decrease |    0.97   |  0.97  |   0.97   |
+| Increase |    0.99   |  0.99  |   0.99   |
+| Maintain |    0.91   |  0.94  |   0.92   |
+
+Analyzing the confusion matrix and the precision,recall and f1 score metrics, we can conclude that the model performed well in classifying the classes. The Increase class achieved the highest score, largely due to the higher representation of this class in the dataset. The Maintain class, despite being artificially increased showed a relatively strong performance. However,its scores were still slightly lower compared to the other classes, likely due to its relatively smaller number of instances.
+Overall, the model demonstrated strong classification performance across all classes
+
+| CLPVariation | Fuzzy CLPVariation | NN CLPVariation | Fuzzy Class | NN Class |
+|:------------:|:------------------:|:---------------:|-------------|----------|
+|     0.85     |        0.83        |       0.83      |   Increase  | Increase |
+|     0.85     |        0.83        |       0.83      |   Increase  | Increase |
+|      0.8     |        0.83        |       0.72      |   Increase  | Increase |
+|     0.73     |        0.70        |       0.55      |   Increase  | Increase |
+|      0.5     |        0.49        |       0.83      |   Increase  | Increase |
+|     0.12     |        0.27        |       0.21      |   Maintain  |  Mantain |
+|     -0.31    |        -0.32       |      -0.60      |   Mantain   | Decrease |
+|     -0.65    |        -0.83       |      -0.51      |   Decrease  | Decrease |
+|     -0.82    |        -0.83       |      -0.83      |   Decrease  | Decrease |
+|     -0.85    |        -0.83       |      -0.83      |   Decrease  | Decrease |
+
+
+When applying the original dataset, we observed a mean squared error (MSE) of 0.026, which is slightly higher than the MSE obtained with the neural network model. This increase in MSE could be attributed to the errors introduced by the Fuzzy System during the generation of the random dataset used for training the neural network. Any inaccuracies in the Fuzzy model might propagate through to the neural network, affecting its training and, consequently, the final predictions.
+
+
 
 ## Conclusions
