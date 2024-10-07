@@ -237,14 +237,14 @@ for i in range(len(input_data)):
     FS.set_variable("HW_Usage", HW_Usage["HW_Usage"])
     FS.set_variable("TrueNetCongestion", TrueNetCongestion["TrueNetCongestion"])
     
-    Result = FS.Mamdani_inference(["CLP"])
-    Intermediates.append([HW_Usage["HW_Usage"], Network["Network"], TrueNetCongestion["TrueNetCongestion"], Result["CLP"], df.iloc[i, 12]])
+    FuzzyCLPVar = FS.Mamdani_inference(["CLP"])
+    Intermediates.append([HW_Usage["HW_Usage"], Network["Network"], TrueNetCongestion["TrueNetCongestion"], FuzzyCLPVar["CLP"], df.iloc[i, 12]])
     
-    Error += (df.iloc[i, 12] - Result["CLP"])**2
+    Error += (df.iloc[i, 12] - FuzzyCLPVar["CLP"])**2
     # print(str(df.iloc[i, 12]) + "  -  " + str(Result["CLP"]))
     
 df1 = pd.DataFrame(Intermediates)
-df1.columns = ["HW_Usage", "Network", "TrueNetCongestion", "Result", "CLPVariation"]
+df1.columns = ["HW_Usage", "Network", "TrueNetCongestion", "FuzzyCLPVar", "CLPVariation"]
 df.drop(columns=['V_MemoryUsage', 'V_ProcessorLoad','V_InpNetThroughput', 'V_OutNetThroughput', 'V_OutBandwidth','V_Latency','CLPVariation'], inplace=True)
 print(df)
 print(df1)
@@ -256,7 +256,7 @@ array = []
 for i in range(df1.shape[0]):
     array.append(i)
     
-plt.scatter(array,df1["Result"],label='Computed CLP Var.')
+plt.scatter(array,df1["FuzzyCLPVar"],label='Computed CLP Var.')
 plt.scatter(array,df1["CLPVariation"],label='Reference CLP Var.')
 plt.legend()
 plt.show()
@@ -271,6 +271,8 @@ def plot_fuzzy_set(fuzzy_set, color):
 
 # Assuming M1, M2, M3, and M4 are already defined as FuzzySet objects
 colors = ['blue', 'green', 'orange', 'red']
+
+df1["FuzzyCLPVar"].to_csv("TestResult.csv")
 
 # Plot each fuzzy set with its corresponding color
 # plot_fuzzy_set(SP1, colors[0])
