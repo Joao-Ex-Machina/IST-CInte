@@ -120,7 +120,7 @@ R_NBAL1 = "IF (Network IS balanced) AND (NOT((Bandwidth IS low) OR (Bandwidth IS
 R_NBAL2 = "IF (Network IS balanced) AND (Bandwidth IS very_high) THEN (TrueNetCongestion IS decongestable)"
 R_NBAL3 = "IF (Network IS balanced) AND (Bandwidth IS low) THEN (TrueNetCongestion IS fullycongested)"
 
-R_NDECON1 = "IF (Network IS de_congested) AND (Bandwidth IS low) THEN (TrueNetCongestion IS decongestable)"
+R_NDECON1 = "IF (Network IS de_congested) AND (Bandwidth IS low) THEN (TrueNetCongestion IS fullycongested)"
 R_NDECON2 = "IF (Network IS de_congested) AND (NOT(Bandwidth IS low)) THEN (TrueNetCongestion IS balanced)" 
 
 

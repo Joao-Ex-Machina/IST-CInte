@@ -1,41 +1,123 @@
-## Master's in Electrical and Computer Engineering
-
-# Applied Computational Intelligence
-
-# First Project Report
-
-David Gao Xia nº 99907 , João Barreiros C. Rodrigues nº 99668
+---
+title: "Applied Computational Intelligence Project Report"
+author: "David Gao Xia nº 99907 , João Barreiros C. Rodrigues nº 99668"
+date: "Oct. 2024"
+output: 
+  pdf_document: 
+    keep_tex: yes
+header-includes:
+---
 
 ## Fuzzy System
 
-### Architecture
+### General Architecture
 
-![Fuzzy System Architecture](./images/FuzzyArch.png){}
+![Fuzzy System Architecture](./images/FuzzyArch.png){width=85%}
 
 From the 12 given variables we opted to only kept the 6 non-variations, since a Fuzzy System with 6 inputs will be smaller (and therefore simpler to fine-tune and write rules for) and the variations give no absolute current information which is the basis for our decision system.
 
 Similiar to the idea of Comb's method, we broke our FIS (Fuzzy Inference System) into smaller, 2 to 3 input FIS. This allowed to have some granularity in their input and output membership sets without the risk of exploding. Our Architecture has 4 FIS.
 
-#### Hardware Usage FIS
+\pagebreak
+
+### Hardware Usage FIS
 
 This system aggregates the hardware-related inputs: **Memory Usage** and **Processor Load**
-Our rules set is fairly simple:
+Our rules set is fairly simple, having a 4 linguistic term granularity for inputs and output
+
+|   |  **Memory**  |          | **Processor** | **Load** |              |
+|---|:------------:|:--------:|:-------------:|:--------:|:------------:|
+|   |              | **Low**  |  **Average**  | **High** | **Critical** |
+|   |   **Low**    |   Low    |      Low      |   Low    |   Critical   |
+|   | **Average ** |   Low    |   Balanced    | Balanced |   Critical   |
+|   |   **High**   |   Low    |   Balanced    |   High   |   Critical   |
+|   | **Critical** | Critical |   Critical    | Critical |   Critical   |
+
+And so are the membership function for this FIS, following the Project guidelines and common sense
 
 ![Membership Functions for Hardware Input and Output variables](./images/HW_FIS_MF.png){}
 
-#### Network Congestion FIS
+\pagebreak
+
+### Network Congestion FIS
+
+This system outputs a "quantitative" network congestion value, based on the I/O throughput of a network.
 
 ![Membership Function for Net. Congestion Input and Output variables](./images/Net_FIS_MF.png){}
 
-#### True Network Congestion FIS
+|   | **Input Th.** |              |  **Output**  |   **Th.**    |               |
+|---|:-------------:|:------------:|:------------:|:------------:|:-------------:|
+|   |               |   **Low**    | **Average**  |   **High**   | **Very High** |
+|   |    **Low**    | Decongested | Decongested | Decongested | Decongested  |
+|   | **Average **  |     Congested      |   Balanced   | Decongested | Decongested  |
+|   |   **High**    |     Congested      |  Congested   |     High     | Decongested  |
+|   | **Very High** |     Congested      |  Congested   |   Balanced   |   Balanced    |
 
+
+\pagebreak
+
+### True Network Congestion FIS
+
+Different from the last FIS the output of this System is not as much a "quantitative" variable as it is and action indicative
 ![Membership Function for True Net. Congestion Input and Output variables](./images/TNC_FIS_MF.png){}
 
-#### Final CLP FIS
+|   | **Out. Bandwidth** |                 | **Previous Calculated Net.** |                 |
+|---|:------------------:|:---------------:|:----------------------------:|:---------------:|
+|   |                    |  **Congested**  |         **Balanced**         | **DeCongested** |
+|   |      **Low**       | F. Congested |       F.  Congested       | F. Congested |
+|   |    **Average **    | F. Congested |           Balanced           |    Balanced     |
+|   |      **High**      | F. Congested |           Balanced           |    Balanced     |
+|   |   **Very High**    |   DeCongest.    |          DeCongest.          |    Balanced     |
 
-![Membership Function for CLP-exclusive Input and Output variables](./images/CLP_FIS_MF.png){}
+\pagebreak
 
-\newpage
+### Final CLP FIS
+
+Since this System takes 3 inputs we reduced the Latency granularity to 3 linguistic terms, so to simplify the rule set. The High Latency Membership starts growing faster with a latency of 0.8 ms, since this is significative of a very poor network connection.
+
+![Membership Function for CLP-exclusive Input and Output variables](./images/CLP_FIS_MF.png){width=90%}
+
+The rule set for the final FIS is slightly more complex. By fixing the Latency variable we can obtain the rule set tables.
+For a **Low Latency** value:
+
+|   | **HW Usage** |                     | **True Net. Congestion** |                   |
+|---|:------------:|:-------------------:|:------------------------:|:-----------------:|
+|   |              |  **F. Congested**   |       **Balanced**       |  **DeCongest.**   |
+|   |   **Low**    |      Increase       |         Increase         |     Increase      |
+|   | **Balanced** |   Increase   |      Keep/Increase       |       Keep        |
+|   |   **High**   |   Increase   |         Decrease         |     Decrease      |
+|   | **Critical** |      Decrease       |         Decrease         |     Decrease      |
+
+
+For a **Average Latency** value:
+
+|   | **HW Usage** |                     | **True Net. Congestion** |                   |
+|---|:------------:|:-------------------:|:------------------------:|:-----------------:|
+|   |              | **F. Congested** |       **Balanced**       | **DeCongest.** |
+|   |   **Low**    |      Increase       |         Increase         |     Increase      |
+|   | **Balanced** |      Increase       |      Keep/Increase       |       Keep        |
+|   |   **High**   |      Increase       |           Keep           |     Decrease      |
+|   | **Critical** |      Decrease       |         Decrease         |     Decrease      |
+
+
+For a **High Latency** value:
+
+|   | **HW Usage** |                     | **True Net. Congestion** |                   |
+|---|:------------:|:-------------------:|:------------------------:|:-----------------:|
+|   |              | **F. Congested** |       **Balanced**       |   **DeCongest.**   |
+|   |   **Low**    |      Increase       |         Increase         |     Increase      |
+|   | **Balanced** |      Increase       |         Increase         |     Increase      |
+|   |   **High**   |      Increase       |         Increase         |     Increase      |
+|   | **Critical** |      Decrease       |         Decrease         |     Decrease      |
+
+The primary rule is the hardware protection-rule, since avoiding malfunctions/crashing on the Edge device and security of the network are our priorities - If the Hardware has reached criticality the CLP must be decreased.
+
+Another rule obviosuly-prioritized is that when the Hardware Usage is Low or the Network is Fully congested (i.e. very difficult to de-congest) the CLP must be increased(except of course when conflicting with the first rule)
+
+Another clear rule is that when latency is considered too high, priority is given to local data processing (which should translate into a CLP increase), once again exception is given when conflicting with rule number one.
+
+
+\pagebreak
 
 ### Performance Metrics
 
@@ -43,6 +125,7 @@ Our fuzzy system solution has a MSE (Mean Squared Error) of **0.0058** , which i
 The comparison between the computed Computing Load Percentage variation (CLPv) and the given reference can be observed below.
 
 ![Computed CLPv compared to reference CLPv using initial dataset](./images/FuzzyComparison.png){}
+
 
 
 \newpage
@@ -59,8 +142,6 @@ The final neural network model consisted of six input features and two hidden la
 
 This configuration of the neural network was chosen based on the best performance observed during the validation phase, ensuring that the final model achieved a strong balance between accuracy and generalization. We then tested this model on the test set to evaluate its real-world performance.
 
-### Metrics
+### Performance Metrics
 
 ## Conclusions
-
-
