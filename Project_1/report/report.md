@@ -16,7 +16,7 @@ header-includes:
 
 From the 12 given variables we opted to only kept the 6 non-variations, since a Fuzzy System with 6 inputs will be smaller (and therefore simpler to fine-tune and write rules for) and the variations give no absolute current information which is the basis for our decision system.
 
-Similiar to the idea of Comb's method, we broke our FIS (Fuzzy Inference System) into smaller, 2 to 3 input FIS. This allowed to have some granularity in their input and output membership sets without the risk of exploding. Our Architecture has 4 FIS.
+Similiar to the idea of Comb's method, we broke our FIS (Fuzzy Inference System) into smaller, 2 to 3 input FISs. This allowed to have some granularity in their input and output membership sets without the risk of exploding. Our Architecture is composed 4 FIS.
 
 \pagebreak
 
@@ -42,7 +42,7 @@ And so are the membership function for this FIS, following the Project guideline
 ### Network Congestion FIS
 
 This system outputs a "quantitative" network congestion value, based on the I/O throughput of a network.
-
+Has with the last FIS both inputs have a granularity of 4 linguistic terms, however the output has only 3, since this seemed granular enough and simplified our FIS.
 ![Membership Function for Net. Congestion Input and Output variables](./images/Net_FIS_MF.png){}
 
 |   | **Input Th.** |              |  **Output**  |   **Th.**    |               |
@@ -58,7 +58,8 @@ This system outputs a "quantitative" network congestion value, based on the I/O 
 
 ### True Network Congestion FIS
 
-Different from the last FIS the output of this System is not as much a "quantitative" variable as it is an action to be taken indicative.
+Different from the last FIS the output of this System is not as much a "quantitative" variable as it is an indicative of an action to be taken.
+This FIS combined the previously produced output with the Output Bandwidth variable, in order to determine if the Network is too congested for data forwarding (Fully Congested) and therefore should prioritize local data processing, able to be de-congested if data forwarding is prioritized  or if it is overall balanced and does not require further action. 
 
 ![Membership Function for True Net. Congestion Input and Output variables](./images/TNC_FIS_MF.png){}
 
@@ -72,15 +73,19 @@ Different from the last FIS the output of this System is not as much a "quantita
 
 \pagebreak
 
+
 ### Final CLP FIS
 
 Since this System takes 3 inputs we reduced the Latency granularity to 3 linguistic terms, so to simplify the rule set. 
 As such the system-exclusive variables membership function is as presented below:
 
-![Membership Function for CLP-exclusive Input and Output variables](./images/CLP_FIS_MF.png){width=90%}
+![Membership Function for CLP-exclusive Input and Output variables](./images/CLP_FIS_MF.png){width=125%}
 
-The High Latency Membership starts growing faster with a latency of 0.8 ms, since this is significative of a very poor network connection.
+Note that the high Latency membership has a sharper growth above 0.8 ms, since this is was taken as a stong indicative of a very poor network connection.
 
+The membership function for the linguistic variable "keep" of the CLP output variable was decided to be made extemely fine, this was made so to pull "keep" cases to 0 the most.
+
+\pagebreak
 The rule set for the final FIS is slightly more complex. By fixing the Latency variable we can obtain the rule set tables.
 For a **Low Latency** value:
 
@@ -141,7 +146,7 @@ Another clear rule is that when latency is considered too high, priority is give
 Our fuzzy system solution has a MSE (Mean Squared Error) of **0.0058** , which indicates a seemingly strong performance for the provided dataset.
 The comparison between the computed Computing Load Percentage variation (CLPv) and the given reference can be observed below.
 
-![Computed CLPv compared to reference CLPv using initial dataset](./images/FuzzyComparison.png){}
+![Computed CLPv compared to reference CLPv using initial dataset](./images/FuzzyComparison.png){width=85%}
 
 The major problem identified in our FIS solution is related to softer transitions - due to our hard limits related to low or critical Hardware Usage, predicted softer CLP transitions are sharper in our solution having less granularity in for greater CLP Increases and Decreases.
 
