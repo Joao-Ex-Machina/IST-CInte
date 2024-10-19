@@ -1,0 +1,51 @@
+﻿City;Country;Latitude;Longitude
+London;United Kindom;51,51;-0,1278
+Paris;France;48,86;2,35
+Berlin;Germany;52,52;13,4
+Rome;Italy;41,9;12,5
+Madrid;Spain;40,42;-3,7
+Vienna ;Austria;48,2;16,37
+Amsterdam;Netherlands;52,37;4,89
+Brussels;Belgium;50,85;4,35
+Zurich;Switzerland;47,38;8,54
+Lisbon;Portugal;38,72;-9,14
+Stockholm;Sweden;59,33;18,07
+Oslo;Norway;59,91;10,75
+Copenhagen;Denmark;55,68;12,57
+Helsinki;Finland;60,17;24,94
+Dublin;Ireland;53,35;-6,26
+Warsaw;Poland;52,23;21,01
+Budapest;Hungary;47,5;19,04
+Prague;Czech Republic;50,08;14,44
+Athens;Greece;37,98;23,73
+Brastislava;Slovakia;48,15;17,11
+Ljubljana;Slovenia;46,06;14,51
+Zagreb;Croatia;45,82;15,98
+Belgrade;Serbia;44,79;20,45
+Sofia;Bulgaria;42,7;23,32
+Bucharest;Romania;44,43;26,1
+Tallinn;Estonia;59,44;24,75
+Riga;Latvia;56,95;24,11
+Vilnius;Lithuania;54,69;25,28
+Sarajevo;Bosnia and Herzegovina;43,86;18,41
+Skopje;North Macedonia;42;21,43
+Podgorica;Montenegro;42,44;19,27
+Tirana;Albania;41,33;19,82
+Nicosia;Cyprus;35,17;33,26
+Genebra;Switzerland;46,2;30,34
+Dubrovnik;Croatia;42,64;18,11
+Vaduz;Liechtenstein;47,14;9,52
+Chisinau;Moldova;47,01;28,86
+Reykjavik;Iceland;64,13;-21,82
+Valleta;Malta;42,35;3,11
+Luxembourg City;Luxembourg;49,61;6,13
+Monaco;Monaco;43,74;7,42
+Andorra la Vella;Andorra;42,51;1,52
+San Marino;San Marino;43,94;12,46
+Munich;Germany;48,14;11,58
+Manchester;United Kindom;53,48;-2,24
+Seville;Spain;37,39;-5,98
+Milan;Italy;45,46;9,19
+Nice;France;43,71;7,26
+Porto ;Portugal;41,16;-8,63
+Istambul;Turkey;-12,52;35,44
