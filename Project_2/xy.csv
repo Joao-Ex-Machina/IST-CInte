@@ -1,5 +1,5 @@
 ﻿City;Country;Latitude;Longitude
-London;United Kindom;51,51;-0,1278
+London;United Kingdom;51,51;-0,1278
 Paris;France;48,86;2,35
 Berlin;Germany;52,52;13,4
 Rome;Italy;41,9;12,5
@@ -32,12 +32,12 @@ Skopje;North Macedonia;42;21,43
 Podgorica;Montenegro;42,44;19,27
 Tirana;Albania;41,33;19,82
 Nicosia;Cyprus;35,17;33,26
-Genebra;Switzerland;46,2;30,34
+Genebra;Switzerland;46,2;6,14
 Dubrovnik;Croatia;42,64;18,11
 Vaduz;Liechtenstein;47,14;9,52
 Chisinau;Moldova;47,01;28,86
 Reykjavik;Iceland;64,13;-21,82
-Valleta;Malta;42,35;3,11
+Valleta;Malta;35,88;14,51
 Luxembourg City;Luxembourg;49,61;6,13
 Monaco;Monaco;43,74;7,42
 Andorra la Vella;Andorra;42,51;1,52
@@ -48,4 +48,4 @@ Seville;Spain;37,39;-5,98
 Milan;Italy;45,46;9,19
 Nice;France;43,71;7,26
 Porto ;Portugal;41,16;-8,63
-Istambul;Turkey;-12,52;35,44
+Istambul;Turkey;41,02;28.08
