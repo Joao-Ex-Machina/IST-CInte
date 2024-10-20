@@ -3,6 +3,8 @@ import random
 import numpy as np
 from deap import base, creator, tools, algorithms
 import matplotlib.pyplot as plt
+import geopandas as gpd
+from shapely.geometry import LineString
 from elitism import eaSimpleWithElitism
 
 def convert_time_to_minutes(time_str):
@@ -27,6 +29,59 @@ def convert_cost(cost_str):
         return 99999999999999  # Use very big num for no route
     else:
         return float(cost_str)
+    
+def plot_map(Route):
+    # Load the CSV file
+    df = pd.read_csv('xy.csv', delimiter=';')
+    # Replace commas with periods in Longitude and Latitude columns
+    df['Longitude'] = df['Longitude'].str.replace(',', '.').astype(float)
+    df['Latitude'] = df['Latitude'].str.replace(',', '.').astype(float)
+    # Create a GeoDataFrame with the geometry column
+    df_geo = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df['Longitude'], df['Latitude']))
+    
+    # Load the Natural Earth low-res dataset
+    world_data = gpd.read_file("geopandas\\ne_110m_admin_0_countries.shp")
+
+    # Get the updated list of unique countries
+    countrys = df_geo['Country'].unique()
+
+    # Check for intersection with the 'ADMIN' column for country names
+    matched_countries = world_data[world_data['ADMIN'].isin(countrys)]
+
+    # Create the plot
+    axis = matched_countries.plot(color='white', edgecolor='black')
+
+    # Plot your GeoDataFrame on top of the map
+    df_geo.plot(ax=axis, color='red', markersize=5)
+
+    # Set the limits of the plot to include the UK
+    plt.xlim(-25, 45)  # Set the longitude limits
+    plt.ylim(30, 85)   # Set the latitude limits
+
+    # Optional: Add titles or labels
+    plt.title('Countries in Europe with Locations')
+    plt.xlabel('Longitude')
+    plt.ylabel('Latitude')
+    
+    route_cities = df_geo[df_geo['City'].isin(Route)]
+    
+    for i in range(len(Route)):
+        city_start = route_cities[route_cities['City'] == Route[i]].iloc[0]
+        city_end = route_cities[route_cities['City'] == Route[(i+1)%len(Route)]].iloc[0]
+        
+        # Get the coordinates for the two cities
+        start_coords = (city_start['Longitude'], city_start['Latitude'])
+        end_coords = (city_end['Longitude'], city_end['Latitude'])
+        
+        # Create a LineString for the route and plot it
+        line = LineString([start_coords, end_coords])
+        gpd.GeoSeries([line]).plot(ax=axis, color='blue', linewidth=2)
+
+    # Show the plot
+    plt.show()
+    
+    return
+    
 
 #PARAMETERS
 
@@ -87,7 +142,7 @@ def setup_toolbox(use_cost=False):
     toolbox.register("evaluate", eval_tsp, matrix=matrix.values)  # Register the evaluate function
 
 toolbox.register("mate", tools.cxOrdered)  # Crossover
-toolbox.register("mutate", tools.mutShuffleIndexes, indpb=0.2)  # Mutation
+toolbox.register("mutate", tools.mutShuffleIndexes, indpb=1.0/len(cost_df))  # Mutation
 toolbox.register("select", tools.selTournament, tournsize=3)  # Selection
 
 stats = tools.Statistics(key=lambda ind: ind.fitness.values)
@@ -142,6 +197,8 @@ def main(use_cost=False):
     plt.title('Min and Average fitness over Generations')
     plt.show()
 
+    plot_map(best_route)
+    
 if __name__ == "__main__":
     # Set use_cost to True if you want to use cost, otherwise it will use time
     main(use_cost=False)  # Change to True to use cost
