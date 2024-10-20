@@ -2,6 +2,8 @@ import pandas as pd
 import random
 import numpy as np
 from deap import base, creator, tools, algorithms
+import matplotlib.pyplot as plt
+from elitism import eaSimpleWithElitism
 
 def convert_time_to_minutes(time_str):
     #print(time_str)  # For debugging purposes
@@ -26,6 +28,15 @@ def convert_cost(cost_str):
     else:
         return float(cost_str)
 
+#PARAMETERS
+
+RANDOM_SEED = 42
+POPULATION_SIZE = 1000
+P_CROSSOVER = 0.7
+P_MUTATION = 0.2
+MAX_GENERATIONS = 250
+HALL_OF_FAME_SIZE = 15
+random.seed(RANDOM_SEED)
 
 
 # Load time and cost data, assuming both have city names as headers and index
@@ -75,23 +86,61 @@ def setup_toolbox(use_cost=False):
     matrix = cost_df if use_cost else time_df  # Choose the matrix based on user input
     toolbox.register("evaluate", eval_tsp, matrix=matrix.values)  # Register the evaluate function
 
-toolbox.register("mate", tools.cxPartialyMatched)  # Crossover
+toolbox.register("mate", tools.cxOrdered)  # Crossover
 toolbox.register("mutate", tools.mutShuffleIndexes, indpb=0.2)  # Mutation
 toolbox.register("select", tools.selTournament, tournsize=3)  # Selection
+
+stats = tools.Statistics(key=lambda ind: ind.fitness.values)
+
+stats.register("avg", np.mean)
+stats.register("min", np.min)
+
+# Create the hall of fame object
+hof = tools.HallOfFame(HALL_OF_FAME_SIZE)
 
 # Run the Genetic Algorithm
 def main(use_cost=False):
     setup_toolbox(use_cost)  # Set up the toolbox with the selected matrix
-    population = toolbox.population(n=1000)  # Create initial population of 100 individuals
-    result_population, logbook = algorithms.eaSimple(
-        population, toolbox, cxpb=0.7, mutpb=0.2, ngen=250, verbose=False)
+    
+    # population = toolbox.population(n=POPULATION_SIZE)  # Create initial population of 100 individuals
+    
+    # result_population, logbook = algorithms.eaSimple(
+    #     population, toolbox, cxpb=P_CROSSOVER, mutpb=P_MUTATION, ngen=MAX_GENERATIONS, stats=stats, verbose=False)
+    
+    #Solution with elitism, the best individuals are kept in the hall of fame
+    result_population, logbook = eaSimpleWithElitism(
+    toolbox.population(n=POPULATION_SIZE),
+    toolbox,
+    cxpb=P_CROSSOVER,
+    mutpb=P_MUTATION,
+    ngen=MAX_GENERATIONS,
+    stats=stats,
+    halloffame=hof,
+    verbose=True
+)
     
     # Get the best individual
     best_individual = tools.selBest(result_population, 1)[0]
     best_route = [cities[i] for i in best_individual]  # Convert indices to city names
 
     print(f"Best route: {best_route}")
-    print(f"Best distance (time or cost): {best_individual.fitness.values[0]}")
+    # Print the best ever individual
+    if(use_cost):
+        print(f"Best cost: {best_individual.fitness.values[0]} €")
+    else:
+        hour = int(best_individual.fitness.values[0] // 60)
+        minute = int(best_individual.fitness.values[0] % 60)
+        print(f"Best time: {hour} h {minute} min")
+
+    
+    minFitnessValues, meanFitnessValues = logbook.select("min", "avg")
+    
+    plt.plot(minFitnessValues, color='red')
+    plt.plot(meanFitnessValues, color='green')
+    plt.xlabel('Generation')
+    plt.ylabel('Min / Average Fitness')
+    plt.title('Min and Average fitness over Generations')
+    plt.show()
 
 if __name__ == "__main__":
     # Set use_cost to True if you want to use cost, otherwise it will use time
