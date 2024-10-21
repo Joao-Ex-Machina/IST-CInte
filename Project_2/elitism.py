@@ -1,5 +1,6 @@
 from deap import tools
 from deap import algorithms
+import random
 
 def eaSimpleWithElitism(population, toolbox, cxpb, mutpb, ngen, stats=None,
              halloffame=None, verbose=__debug__):
@@ -59,3 +60,4 @@ def eaSimpleWithElitism(population, toolbox, cxpb, mutpb, ngen, stats=None,
             print(logbook.stream)
 
     return population, logbook
+
