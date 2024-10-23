@@ -12,33 +12,43 @@ def convert_time_to_minutes(time_str):
     #print(time_str)  # For debugging purposes
 
     # Check if the value is NaN using pd.isna() or a string that indicates no route
-    if pd.isna(time_str) or time_str == 'N/A':
+    if pd.isna(time_str) or time_str == 'N/A' or time_str == '0.0':
         return 99999999999999  # Use very big num for no route
 
     # Split the time string and handle cases where minutes are not specified
+    # try:
+    #     parts = time_str.split('h')
+    #     hours = int(parts[0])
+    #     minutes = int(parts[1]) if len(parts) > 1 and parts[1] else 0
+        
+    #     return hours * 60 + minutes
+    # except ValueError:
+    #     return 99999999999999
     try:
-        parts = time_str.split('h')
+        parts = time_str.split('.')
         hours = int(parts[0])
         minutes = int(parts[1]) if len(parts) > 1 and parts[1] else 0
         
-        return hours * 60 + minutes
+        return hours * 60 + 60 * minutes * 0.01
     except ValueError:
         return 99999999999999
 
 def convert_cost(cost_str):
-    if pd.isna(cost_str) or cost_str == 'N/A':
+    if pd.isna(cost_str) or cost_str == 'N/A' or cost_str == '0.0':
         return 99999999999999  # Use very big num for no route
     else:
         return float(cost_str)
     
 def plot_map(best_individual,individual):
     # Load the CSV file
-    df = pd.read_csv('xy.csv', delimiter=';')
+    df = pd.read_csv('Examples\\xy.csv', delimiter=',')
+    # df = pd.read_csv('xy.csv', delimiter=';')
     # Replace commas with periods in Longitude and Latitude columns
-    df['Longitude'] = df['Longitude'].str.replace(',', '.').astype(float)
-    df['Latitude'] = df['Latitude'].str.replace(',', '.').astype(float)
+    # df['Longitude'] = df['Longitude'].str.replace(',', '.').astype(float)
+    # df['Latitude'] = df['Latitude'].str.replace(',', '.').astype(float)
     # Create a GeoDataFrame with the geometry column
     df_geo = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df['Longitude'], df['Latitude']))
+    
     
     # Load the Natural Earth low-res dataset
     world_data = gpd.read_file("geopandas\\ne_110m_admin_0_countries.shp")
@@ -96,6 +106,7 @@ def plot_map(best_individual,individual):
 
         # Filter the dataframe to include only the cities in the route
         route_cities = df_geo[df_geo['City'].isin(Route)]
+        
 
         # Loop through the route and plot the lines with the corresponding color
         for i in range(len(Route)):
@@ -131,20 +142,32 @@ def plot_map(best_individual,individual):
 #PARAMETERS
 
 RANDOM_SEED = 42
-POPULATION_SIZE = 1000
-P_CROSSOVER = 0.7
-P_MUTATION = 0.2
-MAX_GENERATIONS = 250
+POPULATION_SIZE = 100
+P_CROSSOVER = 0.8
+P_MUTATION = 0.1
+MAX_GENERATIONS = 100
 HALL_OF_FAME_SIZE = 15
 random.seed(RANDOM_SEED)
 
 
 # Load time and cost data, assuming both have city names as headers and index
-plane_time_df = pd.read_csv('timeplane.csv', sep=';', index_col=0, header=0, dtype=str)
-plane_cost_df = pd.read_csv('costplane.csv', sep=';', index_col=0, header=0, dtype=str)
+# plane_time_df = pd.read_csv('Examples\\timeplane.csv', sep=';', index_col=0, header=0, dtype=str)
+# plane_cost_df = pd.read_csv('Examples\\costplane.csv', sep=';', index_col=0, header=0, dtype=str)
 
-bus_time_df = pd.read_csv('timebus.csv', sep=';', index_col=0, header=0, dtype=str)
-bus_cost_df = pd.read_csv('costbus.csv', sep=';', index_col=0, header=0, dtype=str)
+# bus_time_df = pd.read_csv('Examples\\timebus.csv', sep=';', index_col=0, header=0, dtype=str)
+# bus_cost_df = pd.read_csv('Examples\\costbus.csv', sep=';', index_col=0, header=0, dtype=str)
+
+# train_time_df = pd.read_csv('Examples\\timetrain.csv', sep=';', index_col=0, header=0, dtype=str)
+# train_cost_df = pd.read_csv('Examples\\costtrain.csv', sep=';', index_col=0, header=0, dtype=str)
+
+plane_time_df = pd.read_csv('Examples\\timeplane.csv', sep=',', index_col=0, header=0, dtype=str)
+plane_cost_df = pd.read_csv('Examples\\costplane.csv', sep=',', index_col=0, header=0, dtype=str)
+
+bus_time_df = pd.read_csv('Examples\\timebus.csv', sep=',', index_col=0, header=0, dtype=str)
+bus_cost_df = pd.read_csv('Examples\\costbus.csv', sep=',', index_col=0, header=0, dtype=str)
+
+train_time_df = pd.read_csv('Examples\\timetrain.csv', sep=',', index_col=0, header=0, dtype=str)
+train_cost_df = pd.read_csv('Examples\\costtrain.csv', sep=',', index_col=0, header=0, dtype=str)
 
 if bus_time_df.columns[-1].startswith('Unnamed'):
     bus_time_df = bus_time_df.iloc[:, :-1]
@@ -152,14 +175,20 @@ if bus_time_df.columns[-1].startswith('Unnamed'):
 if plane_time_df.columns[-1].startswith('Unnamed'):
     plane_time_df = plane_time_df.iloc[:, :-1]
 
-# print(bus_time_df)
-# print(bus_cost_df)
+if train_time_df.columns[-1].startswith('Unnamed'):
+    train_time_df = train_time_df.iloc[:, :-1]
+
+# print(train_time_df)
+# print(train_cost_df)
 
 plane_time_df = plane_time_df.map(convert_time_to_minutes)
 plane_cost_df = plane_cost_df.map(convert_cost)
 
 bus_time_df = bus_time_df.map(convert_time_to_minutes)
 bus_cost_df = bus_cost_df.map(convert_cost)
+
+train_time_df = train_time_df.map(convert_time_to_minutes)
+train_cost_df = train_cost_df.map(convert_cost)
 
 
 # Get the list of cities (both origin and destination cities are now in index and columns)
@@ -186,34 +215,34 @@ def eval_tsp(individual, matrix):
 
     return (total_value,)# Setup the DEAP toolbox
 
-def multi_eval_tsp(individual,plane_matrix, bus_matrix):
+def multi_eval_tsp(individual,plane_matrix, bus_matrix,train_matrix):
     route, transport_modes = individual
     total_time = 0
     for i in range(len(route)):
         city1_idx = route[i]
         city2_idx  = route[(i+1) % len(route)]
         
+        # Print index and column names
+              
+        
         plane = plane_matrix[city1_idx,city2_idx]
         bus = bus_matrix[city1_idx,city2_idx]
+        train = train_matrix[city1_idx,city2_idx]
         
-        if plane < bus:
+        if plane < bus and plane < train: 
             total_time += plane
             transport_modes[i] = 'plane'
-        else:
+        elif bus < plane and bus < train:
             total_time += bus
             transport_modes[i] = 'bus'
-        # if transport_modes[i] == 'plane':
-        #     total_time +=plane_matrix[city1_idx,city2_idx]
-        # elif transport_modes[i] == 'bus':
-        #     # print(city1_idx,city2_idx)
-        #     total_time += bus_matrix[city1_idx,city2_idx]
-        # else:  # train
-        #     total_time += train_matrix[city1_idx][city2_idx]
-    return (total_time,)  # Tuple for DEAP compatibility
+        elif train < plane and train < bus:
+            total_time += train
+            transport_modes[i] = 'train'
+    return (total_time,)  # Tuple for DEAP compatibilityy2_idx]
 
 def create_individual():
     route = random.sample(list(range(len(cities))), len(cities))
-    transport_modes = [random.choice(['plane', 'bus']) for _ in range(len(route))]
+    transport_modes = [random.choice(['plane', 'bus', 'train']) for _ in range(len(route))]
     return creator.Individual([route, transport_modes])
 
 toolbox = base.Toolbox()
@@ -235,12 +264,16 @@ def setup_toolbox(use_cost=False, individual=False, transport = 1):
             matrix = plane_cost_df if use_cost else plane_time_df
         elif transport == 2:
             matrix = bus_cost_df if use_cost else bus_time_df       
+        elif transport == 3:
+            matrix = train_cost_df if use_cost else train_time_df
         toolbox.register("evaluate", eval_tsp, matrix=matrix.values)  # Register the evaluate function
+        
         
     else:              
         plane_matrix = plane_cost_df if use_cost else plane_time_df  # Choose the matrix based on user input
         bus_matrix = bus_cost_df if use_cost else bus_time_df  # Choose the matrix based on user input
-        toolbox.register("evaluate", multi_eval_tsp, plane_matrix=plane_matrix.values, bus_matrix=bus_matrix.values)  # Register the evaluate function
+        train_matrix = train_cost_df if use_cost else train_time_df  # Choose the matrix based on user input
+        toolbox.register("evaluate", multi_eval_tsp, plane_matrix=plane_matrix.values, bus_matrix=bus_matrix.values, train_matrix = train_matrix.values )  # Register the evaluate function
  
 def crossover(ind1, ind2):
     # Ordered crossover for cities
@@ -261,7 +294,7 @@ def mutate(individual, indpb=0.2):
     # Mutate the transportation modes
     for i in range(len(individual[1])):
         if random.random() < indpb:
-            individual[1][i] = random.choice(['plane', 'bus'])
+            individual[1][i] = random.choice(['plane', 'bus', 'train'])
     return individual,
 
 def offspring_setup(individual = False):
@@ -340,5 +373,5 @@ def main(use_cost=False, individual=False, transport = 1):
     
 if __name__ == "__main__":
     # Set use_cost to True if you want to use cost, otherwise it will use time
-    main(use_cost=True, individual=False, transport = 1)  # Change the use_cost to True to use cost, Change individual to True to only one type of transport
+    main(use_cost=False, individual=False, transport = 3)  # Change the use_cost to True to use cost, Change individual to True to only one type of transport
                                                           # Trasport type 1: plane, 2: bus 3: train
