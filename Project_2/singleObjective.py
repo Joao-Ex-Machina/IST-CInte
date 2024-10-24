@@ -144,7 +144,8 @@ def plot_map(best_individual,individual):
 RANDOM_SEED = 42
 POPULATION_SIZE = 100
 P_CROSSOVER = 0.8
-P_MUTATION = 0.1
+P_MUTATION = 0.9
+HEURISTIC_SIZE = 1
 MAX_GENERATIONS = 100
 HALL_OF_FAME_SIZE = 15
 random.seed(RANDOM_SEED)
@@ -190,9 +191,15 @@ bus_cost_df = bus_cost_df.map(convert_cost)
 train_time_df = train_time_df.map(convert_time_to_minutes)
 train_cost_df = train_cost_df.map(convert_cost)
 
+df = pd.read_csv('Examples\\xy.csv', delimiter=',')
+duplicates = df[df['City'].duplicated(keep=False)]  # This will return all duplicate entries
+
+if not duplicates.empty:
+    # Remove the second encounter of duplicates (keep the first occurrence)
+    df = df.drop_duplicates(subset='City', keep='first').reset_index(drop=True)
 
 # Get the list of cities (both origin and destination cities are now in index and columns)
-cities = list(plane_time_df.index)  # This assumes the cities are the same for both time_df and cost_df
+cities = list(df['City'])  # This assumes the cities are the same for both time_df and cost_df
 
 # DEAP setup: Define fitness function (minimization problem)
 creator.create("FitnessMin", base.Fitness, weights=(-1.0,))  # Minimize distance
@@ -245,16 +252,87 @@ def create_individual():
     transport_modes = [random.choice(['plane', 'bus', 'train']) for _ in range(len(route))]
     return creator.Individual([route, transport_modes])
 
+def create_heuristic_individual():
+    route = heuristics()
+    transport_modes = [random.choice(['plane', 'bus', 'train']) for _ in range(len(route))]
+    return creator.Individual([route, transport_modes])
+
 toolbox = base.Toolbox()
 
-def population_tools(individual=False): 
-    if individual:
-        toolbox.register("indices", random.sample, range(len(cities)), len(cities))  # Create a random individual
-        toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.indices)
-    else:  
-        toolbox.register("individual", create_individual)
+def heuristics():
+    df = pd.read_csv('Examples\\xy.csv', delimiter=',')
+    
+    route = []
+    city_list = list(df['City'])
+    
+    # Check for duplicates in the 'City' column of df_geo
+    duplicates = df[df['City'].duplicated(keep=False)]  # This will return all duplicate entries
+
+    if not duplicates.empty:  
+        # Remove the second encounter of duplicates (keep the first occurrence)
+        df = df.drop_duplicates(subset='City', keep='first').reset_index(drop=True)
+    
+    for i in range(len(df)):
+        route.append([df['City'][i], df['Longitude'][i], df['Latitude'][i]])
         
-    toolbox.register("population", tools.initRepeat, list, toolbox.individual)
+    middle = (df['Longitude'].max() + df['Longitude'].min()) / 2
+
+    left_part = []
+    right_part = []
+    for i in range(len(route)):
+        if route[i][1] < middle:
+            left_part.append(route[i])
+        else:
+            right_part.append(route[i])
+            
+    left_part = sorted(left_part, key=lambda x: (-x[2], -x[1]))
+    right_part = sorted(right_part, key=lambda x: (x[2], x[1]))
+    
+    heuristic_route = []
+    for i in range(len(left_part)):
+        heuristic_route.append(left_part[i])
+    for i in range(len(right_part)):
+        heuristic_route.append(right_part[i])
+
+
+    heuristic_route_indices = [city_list.index(city[0]) for city in heuristic_route]
+
+    return heuristic_route_indices
+            
+
+def population_tools(individual=False, heuristic=False):
+    if heuristic: 
+        if individual:
+            toolbox.register("indices", random.sample, range(len(cities)), len(cities))  # Create a random individual
+            toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.indices)
+            toolbox.register("indices", heuristics)  # Create a random individual
+            toolbox.register("heuristic_individual", tools.initIterate, creator.Individual, toolbox.indices)
+        else:
+            toolbox.register("individual", create_individual)
+            toolbox.register("heuristic_individual", create_heuristic_individual)
+
+        def create_population(n):
+            heuristic_size = int(HEURISTIC_SIZE * n)
+
+            
+            heuristic_individual = [toolbox.heuristic_individual() for _ in range(heuristic_size)]
+            random_individual = [toolbox.individual() for _ in range(n - len(heuristic_individual))]
+            
+            population = heuristic_individual + random_individual
+            random.shuffle(population)
+            
+            return population
+        
+        toolbox.register("population", create_population)    
+                   
+    else:
+        if individual:
+            toolbox.register("indices", random.sample, range(len(cities)), len(cities))  # Create a random individual
+            toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.indices)
+        else:  
+            toolbox.register("individual", create_individual)
+        
+        toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
 
 # Setup the DEAP toolbox based on the chosen evaluation matrix
@@ -316,8 +394,8 @@ stats.register("min", np.min)
 hof = tools.HallOfFame(HALL_OF_FAME_SIZE)
 
 # Run the Genetic Algorithm
-def main(use_cost=False, individual=False, transport = 1):
-    population_tools(individual)
+def main(use_cost=False, individual=False, transport = 1, heuristic = False):   
+    population_tools(individual, heuristic)
     setup_toolbox(use_cost,individual,transport)  # Set up the toolbox with the selected matrix
     offspring_setup(individual)
  
@@ -373,5 +451,5 @@ def main(use_cost=False, individual=False, transport = 1):
     
 if __name__ == "__main__":
     # Set use_cost to True if you want to use cost, otherwise it will use time
-    main(use_cost=False, individual=False, transport = 3)  # Change the use_cost to True to use cost, Change individual to True to only one type of transport
+    main(use_cost=False, individual=False, transport = 3, heuristic = True)  # Change the use_cost to True to use cost, Change individual to True to only one type of transport
                                                           # Trasport type 1: plane, 2: bus 3: train
