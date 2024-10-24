@@ -147,8 +147,8 @@ def plot_map(best_individual,individual):
 
 RANDOM_SEED = 42
 POPULATION_SIZE = 100
-P_CROSSOVER = 0.8
-P_MUTATION = 0.9
+P_CROSSOVER = 0.9
+P_MUTATION = 0.8
 HEURISTIC_SIZE = 1
 MAX_GENERATIONS = 100
 HALL_OF_FAME_SIZE = 15
@@ -212,50 +212,83 @@ if not duplicates.empty:
 cities = list(df['City'])  # This assumes the cities are the same for both time_df and cost_df
 
 # DEAP setup: Define fitness function (minimization problem)
-creator.create("FitnessMin", base.Fitness, weights=(-1.0,))  # Minimize distance
-creator.create("Individual", list, fitness=creator.FitnessMin)
+creator.create("FitnessMulti", base.Fitness, weights=(-1.0,-1.0))  # Minimize distance
+creator.create("Individual", list, fitness=creator.FitnessMulti)
 
 
-
-# Function to evaluate the TSP solution (time or cost matrix)
-def eval_tsp(individual, matrix):
-    total_value = 0
-    num_cities = len(individual)
-
-    for i in range(num_cities):
-        # Get city names from the individual (which are city indices)
-        city1_idx = individual[i]       # Index of the origin city
-        city2_idx = individual[(i + 1) % num_cities]  # Index of the destination city (wrap around at the end)
-        
-        # Access the value in the matrix using indices directly
-        total_value += matrix[city1_idx, city2_idx]
-
-    return (total_value,)# Setup the DEAP toolbox
-
-def multi_eval_tsp(individual,plane_matrix, bus_matrix,train_matrix):
+def pareto_eval_tsp(individual, plane_matrix_time, bus_matrix_time, train_matrix_time, 
+                    plane_matrix_cost, bus_matrix_cost, train_matrix_cost):
     route, transport_modes = individual
     total_time = 0
+    total_cost = 0
+    
+    # Calculate total time and cost
     for i in range(len(route)):
         city1_idx = route[i]
-        city2_idx  = route[(i+1) % len(route)]
-        
-        # Print index and column names
-              
-        
-        plane = plane_matrix[city1_idx,city2_idx]
-        bus = bus_matrix[city1_idx,city2_idx]
-        train = train_matrix[city1_idx,city2_idx]
-        
-        if plane < bus and plane < train: 
-            total_time += plane
+        city2_idx = route[(i + 1) % len(route)]
+
+        # Retrieve time and cost for each transport mode
+        plane_time = plane_matrix_time[city1_idx, city2_idx]
+        plane_cost = plane_matrix_cost[city1_idx, city2_idx]
+        bus_time = bus_matrix_time[city1_idx, city2_idx]
+        bus_cost = bus_matrix_cost[city1_idx, city2_idx]
+        train_time = train_matrix_time[city1_idx, city2_idx]
+        train_cost = train_matrix_cost[city1_idx, city2_idx]
+
+        # Choose the transport mode based on custom logic (e.g., minimum time)
+        # Here, we still select based on a simple rule, but this can be adapted.
+        if plane_time < bus_time and plane_time < train_time:
+            total_time += plane_time
+            total_cost += plane_cost
             transport_modes[i] = 'plane'
-        elif bus < plane and bus < train:
-            total_time += bus
+        elif bus_time < plane_time and bus_time < train_time:
+            total_time += bus_time
+            total_cost += bus_cost
             transport_modes[i] = 'bus'
-        elif train < plane and train < bus:
-            total_time += train
+        else:
+            total_time += train_time
+            total_cost += train_cost
             transport_modes[i] = 'train'
-    return (total_time,)  # Tuple for DEAP compatibilityy2_idx]
+
+    # Return both objectives: time and cost
+    return total_time, total_cost
+
+
+def non_dominated_sort(population):
+    """Sorts a population into non-dominated fronts."""
+    front = [[]]
+    for p in population:
+        p.domination_count = 0
+        p.dominated_solutions = []
+
+        for q in population:
+            if p is not q:
+                if dominates(p.fitness.values, q.fitness.values):
+                    p.dominated_solutions.append(q)
+                elif dominates(q.fitness.values, p.fitness.values):
+                    p.domination_count += 1
+
+        if p.domination_count == 0:
+            front[0].append(p)
+
+    i = 0
+    while front[i]:
+        next_front = []
+        for p in front[i]:
+            for q in p.dominated_solutions:
+                q.domination_count -= 1
+                if q.domination_count == 0:
+                    next_front.append(q)
+        i += 1
+        front.append(next_front)
+
+    return front[:-1]  # Remove the last empty front
+
+
+def dominates(individual_a, individual_b):
+    """Check if individual_a dominates individual_b."""
+    return all(x <= y for x, y in zip(individual_a, individual_b)) and any(x < y for x, y in zip(individual_a, individual_b))
+
 
 def create_individual():
     route = random.sample(list(range(len(cities))), len(cities))
@@ -349,23 +382,17 @@ def population_tools(individual=False, heuristic=False):
 
 
 # Setup the DEAP toolbox based on the chosen evaluation matrix
-def setup_toolbox(use_cost=False, individual=False, transport = 1):
-    if individual:
-        if transport == 1:
-            matrix = plane_cost_df if use_cost else plane_time_df
-        elif transport == 2:
-            matrix = bus_cost_df if use_cost else bus_time_df       
-        elif transport == 3:
-            matrix = train_cost_df if use_cost else train_time_df
-        toolbox.register("evaluate", eval_tsp, matrix=matrix.values)  # Register the evaluate function
-        
-        
-    else:              
-        plane_matrix = plane_cost_df if use_cost else plane_time_df  # Choose the matrix based on user input
-        bus_matrix = bus_cost_df if use_cost else bus_time_df  # Choose the matrix based on user input
-        train_matrix = train_cost_df if use_cost else train_time_df  # Choose the matrix based on user input
-        toolbox.register("evaluate", multi_eval_tsp, plane_matrix=plane_matrix.values, bus_matrix=bus_matrix.values, train_matrix = train_matrix.values )  # Register the evaluate function
- 
+def setup_toolbox():
+    plane_matrix_time = plane_time_df.values
+    bus_matrix_time = bus_time_df.values
+    train_matrix_time = train_time_df.values
+
+    plane_matrix_cost = plane_cost_df.values
+    bus_matrix_cost = bus_cost_df.values
+    train_matrix_cost = train_cost_df.values
+    toolbox.register("evaluate", pareto_eval_tsp,plane_matrix_time=plane_matrix_time, bus_matrix_time=bus_matrix_time, train_matrix_time=train_matrix_time,plane_matrix_cost=plane_matrix_cost, bus_matrix_cost=bus_matrix_cost, train_matrix_cost=train_matrix_cost)
+
+
 def crossover(ind1, ind2):
     # Ordered crossover for cities
     route1, route2 = tools.cxOrdered(ind1[0], ind2[0])
@@ -388,15 +415,11 @@ def mutate(individual, indpb=0.2):
             individual[1][i] = random.choice(['plane', 'bus', 'train'])
     return individual,
 
-def offspring_setup(individual = False):
-    if individual:
-        toolbox.register("mate", tools.cxOrdered)  # Crossover
-        toolbox.register("mutate", tools.mutShuffleIndexes, indpb=1.0/len(plane_cost_df))  # Mutation
-        toolbox.register("select", tools.selTournament, tournsize=3)  # Selection
-    else:
+def offspring_setup():
+
         toolbox.register("mate", crossover)
         toolbox.register("mutate", mutate, indpb=0.2)
-        toolbox.register("select", tools.selTournament, tournsize=3)  # Selection
+        toolbox.register("select", tools.selNSGA2)  # Selection
 
 stats = tools.Statistics(key=lambda ind: ind.fitness.values)
 
@@ -409,8 +432,8 @@ hof = tools.HallOfFame(HALL_OF_FAME_SIZE)
 # Run the Genetic Algorithm
 def main(use_cost=False, individual=False, transport = 1, heuristic = False):   
     population_tools(individual, heuristic)
-    setup_toolbox(use_cost,individual,transport)  # Set up the toolbox with the selected matrix
-    offspring_setup(individual)
+    setup_toolbox()  # Set up the toolbox with the selected matrix
+    offspring_setup()
  
     # population = toolbox.population(n=POPULATION_SIZE)  # Create initial population of 100 individuals
     
@@ -443,13 +466,8 @@ def main(use_cost=False, individual=False, transport = 1, heuristic = False):
         print("Best transport modes:", best_transport_modes)
         
     # Print the best ever individual
-    if(use_cost):
-        print(f"Best cost: {best_individual.fitness.values[0]} €")
-    else:
-        hour = int(best_individual.fitness.values[0] // 60)
-        minute = int(best_individual.fitness.values[0] % 60)
-        print(f"Best time: {hour} h {minute} min")
-
+        print(f"Best time and cost: {best_individual.fitness.values[0]} €")
+        
     
     minFitnessValues, meanFitnessValues = logbook.select("min", "avg")
     
