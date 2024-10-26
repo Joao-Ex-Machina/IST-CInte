@@ -40,7 +40,99 @@ def convert_cost(cost_str):
         return 99999999999999  # Use very big num for no route
     else:
         return float(cost_str)
+
+
+def calculate_total_time_and_cost(best_route, best_transport_modes, 
+                                  df_plane_time, df_plane_cost, 
+                                  df_bus_time, df_bus_cost, 
+                                  df_train_time, df_train_cost):
+    total_time = 0
+    total_cost = 0
     
+    # Define dictionaries to map transport modes to the appropriate time and cost DataFrames
+    time_dfs = {
+        'plane': df_plane_time,
+        'bus': df_bus_time,
+        'train': df_train_time
+    }
+    
+    cost_dfs = {
+        'plane': df_plane_cost,
+        'bus': df_bus_cost,
+        'train': df_train_cost
+    }
+    
+
+def calculate_total_time_and_cost(best_route, best_transport_modes, 
+                                  df_plane_time, df_plane_cost, 
+                                  df_bus_time, df_bus_cost, 
+                                  df_train_time, df_train_cost):
+    total_time = 0
+    total_cost = 0
+    
+    # Define dictionaries to map transport modes to the appropriate time and cost DataFrames
+    time_dfs = {
+        'plane': df_plane_time,
+        'bus': df_bus_time,
+        'train': df_train_time
+    }
+    
+    cost_dfs = {
+        'plane': df_plane_cost,
+        'bus': df_bus_cost,
+        'train': df_train_cost
+    }
+    
+   # Iterate through each leg of the route
+    for i in range(len(best_route) - 1):
+        city1 = best_route[i]
+        city2 = best_route[i + 1]
+        transport_mode = best_transport_modes[i]
+        
+        # Select the appropriate DataFrames for time and cost based on the transport mode
+        df_time = time_dfs[transport_mode]
+        df_cost = cost_dfs[transport_mode]
+        
+        # Retrieve time and cost between city1 and city2 from the selected DataFrames
+        try:
+            time_value = df_time.loc[city1, city2]
+            cost_value = df_cost.loc[city1, city2]
+
+            # Check for duplicates in total_time before adding
+            if isinstance(total_time, pd.Series) and total_time.index.duplicated().any():
+                total_time = total_time[~total_time.index.duplicated(keep='first')]
+            
+            total_time += time_value
+            total_cost += cost_value
+            
+        except KeyError:
+            print(f"No data available for route from {city1} to {city2} via {transport_mode}.")
+            continue
+
+        # Add the cost and time for the return to the starting city to complete the route
+        city1 = best_route[-1]
+        city2 = best_route[0]
+        transport_mode = best_transport_modes[-1]
+
+        df_time = time_dfs[transport_mode]
+        df_cost = cost_dfs[transport_mode]
+
+        try:
+            time_value = df_time.loc[city1, city2]
+            cost_value = df_cost.loc[city1, city2]
+
+            # Check for duplicates in total_time before adding
+            if isinstance(total_time, pd.Series) and total_time.index.duplicated().any():
+                total_time = total_time[~total_time.index.duplicated(keep='first')]
+
+            total_time += time_value
+            total_cost += cost_value
+
+        except KeyError:
+            print(f"No data available for return route from {city1} to {city2} via {transport_mode}.")
+
+        return total_time, total_cost
+
 def plot_map(best_individual,individual):
     # Load the CSV file
     if os.name == 'posix':  # For Unix-like OSs (Joao)
@@ -146,7 +238,7 @@ def plot_map(best_individual,individual):
 #PARAMETERS
 
 RANDOM_SEED = 42
-POPULATION_SIZE = 100
+POPULATION_SIZE = 1000
 P_CROSSOVER = 0.9
 P_MUTATION = 0.8
 HEURISTIC_SIZE = 1
@@ -235,23 +327,32 @@ def pareto_eval_tsp(individual, plane_matrix_time, bus_matrix_time, train_matrix
         train_time = train_matrix_time[city1_idx, city2_idx]
         train_cost = train_matrix_cost[city1_idx, city2_idx]
 
-        # Choose the transport mode based on custom logic (e.g., minimum time)
-        # Here, we still select based on a simple rule, but this can be adapted.
-        if plane_time < bus_time and plane_time < train_time:
+        transport_mode = random.choice(['plane', 'bus', 'train'])
+        
+        # Accumulate time and cost based on the chosen transport mode
+        if transport_mode == 'plane':
             total_time += plane_time
             total_cost += plane_cost
             transport_modes[i] = 'plane'
-        elif bus_time < plane_time and bus_time < train_time:
+        elif transport_mode == 'bus':
             total_time += bus_time
             total_cost += bus_cost
             transport_modes[i] = 'bus'
-        else:
+        else:  # train
             total_time += train_time
             total_cost += train_cost
-            transport_modes[i] = 'train'
-
-    # Return both objectives: time and cost
+            transport_modes[i] = 'train'    # Return both objectives: time and cost
+    
     return total_time, total_cost
+
+def plot_pareto_front(population):
+    times = [ind.fitness.values[0] for ind in population]
+    costs = [ind.fitness.values[1] for ind in population]
+    plt.scatter(times, costs, c='blue')
+    plt.xlabel('Total Time')
+    plt.ylabel('Total Cost')
+    plt.title('Pareto Front')
+    plt.show()
 
 
 def non_dominated_sort(population):
@@ -453,7 +554,8 @@ def main(use_cost=False, individual=False, transport = 1, heuristic = False):
 )
     
 
-    
+    plot_pareto_front(result_population)
+
     best_individual = tools.selBest(result_population, 1)[0]
     if individual:
         # Get the best individual
@@ -466,11 +568,19 @@ def main(use_cost=False, individual=False, transport = 1, heuristic = False):
         print("Best transport modes:", best_transport_modes)
         
     # Print the best ever individual
-        print(f"Best time and cost: {best_individual.fitness.values[0]} €")
+        print(f"Best time and cost: {best_individual.fitness.values[0]}  {best_individual.fitness.values[1]}€")
         
     
     minFitnessValues, meanFitnessValues = logbook.select("min", "avg")
     
+#  total_time, total_cost = calculate_total_time_and_cost(
+ #   best_route, best_transport_modes,
+  #  plane_time_df, bus_time_df, train_time_df, 
+   # plane_cost_df, bus_cost_df, train_cost_df
+    #)
+
+#    print(f"Total Time: {total_time}")
+#   print(f"Total Cost: {total_cost}")    
     plt.plot(minFitnessValues, color='red')
     plt.plot(meanFitnessValues, color='green')
     plt.xlabel('Generation')

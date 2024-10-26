@@ -40,7 +40,78 @@ def convert_cost(cost_str):
         return 99999999999999  # Use very big num for no route
     else:
         return float(cost_str)
+
+
+def calculate_total_time_and_cost(best_route, best_transport_modes, 
+                                  df_plane_time, df_plane_cost, 
+                                  df_bus_time, df_bus_cost, 
+                                  df_train_time, df_train_cost):
+    total_time = 0
+    total_cost = 0
     
+    # Define dictionaries to map transport modes to the appropriate time and cost DataFrames
+    time_dfs = {
+        'plane': df_plane_time,
+        'bus': df_bus_time,
+        'train': df_train_time
+    }
+    
+    cost_dfs = {
+        'plane': df_plane_cost,
+        'bus': df_bus_cost,
+        'train': df_train_cost
+    }
+    
+   # Iterate through each leg of the route
+    for i in range(len(best_route) - 1):
+        city1 = best_route[i]
+        city2 = best_route[i + 1]
+        transport_mode = best_transport_modes[i]
+    
+        # Select the appropriate DataFrames for time and cost based on the transport mode
+        df_time = time_dfs[transport_mode]
+        df_cost = cost_dfs[transport_mode]
+        
+        # Retrieve time and cost between city1 and city2 from the selected DataFrames
+        try:
+            time_value = df_time.loc[city1, city2]
+            cost_value = df_cost.loc[city1, city2]
+
+            # Check for duplicates in total_time before adding
+            if isinstance(total_time, pd.Series) and total_time.index.duplicated().any():
+                total_time = total_time[~total_time.index.duplicated(keep='first')]
+            
+            total_time += time_value
+            total_cost += cost_value
+            
+        except KeyError:
+            print(f"No data available for route from {city1} to {city2} via {transport_mode}.")
+            continue
+
+        # Add the cost and time for the return to the starting city to complete the route
+        city1 = best_route[-1]
+        city2 = best_route[0]
+        transport_mode = best_transport_modes[-1]
+
+        df_time = time_dfs[transport_mode]
+        df_cost = cost_dfs[transport_mode]
+
+        try:
+            time_value = df_time.loc[city1, city2]
+            cost_value = df_cost.loc[city1, city2]
+
+            # Check for duplicates in total_time before adding
+            if isinstance(total_time, pd.Series) and total_time.index.duplicated().any():
+                total_time = total_time[~total_time.index.duplicated(keep='first')]
+
+            total_time += time_value
+            total_cost += cost_value
+
+        except KeyError:
+            print(f"No data available for return route from {city1} to {city2} via {transport_mode}.")
+
+    return total_time, total_cost
+
 def plot_map(best_individual,individual):
     # Load the CSV file
     if os.name == 'posix':  # For Unix-like OSs (Joao)
@@ -452,7 +523,14 @@ def main(use_cost=False, individual=False, transport = 1, heuristic = False):
 
     
     minFitnessValues, meanFitnessValues = logbook.select("min", "avg")
-    
+ #   total_time, total_cost = calculate_total_time_and_cost(
+  #  best_route, best_transport_modes,
+   # plane_time_df, bus_time_df, train_time_df, 
+    #plane_cost_df, bus_cost_df, train_cost_df
+    #)
+
+#    print(f"Total Time: {total_time}")
+ #   print(f"Total Cost: {total_cost}")      
     plt.plot(minFitnessValues, color='red')
     plt.plot(meanFitnessValues, color='green')
     plt.xlabel('Generation')
