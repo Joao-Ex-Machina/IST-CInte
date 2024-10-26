@@ -240,11 +240,17 @@ def plot_map(best_individual,individual):
 RANDOM_SEED = 42
 POPULATION_SIZE = 1000
 P_CROSSOVER = 0.9
-P_MUTATION = 0.8
-HEURISTIC_SIZE = 1
+P_MUTATION = 0.4
+HEURISTIC_SIZE = 0.25
 MAX_GENERATIONS = 100
 HALL_OF_FAME_SIZE = 15
 random.seed(RANDOM_SEED)
+
+# Best cost: 2123.4 €
+# Best time: 64 h 35 min
+# P_CROSSOVER = 0.9
+# P_MUTATION = 0.4
+# HEURISTIC_SIZE = 0.25
 
 
 # Load time and cost data, assuming both have city names as headers and index
@@ -524,8 +530,8 @@ def offspring_setup():
 
 stats = tools.Statistics(key=lambda ind: ind.fitness.values)
 
-stats.register("avg", np.mean)
-stats.register("min", np.min)
+stats.register("avg", np.mean, axis = 0)
+stats.register("min", np.min, axis = 0)
 
 # Create the hall of fame object
 hof = tools.HallOfFame(HALL_OF_FAME_SIZE)
@@ -568,7 +574,9 @@ def main(use_cost=False, individual=False, transport = 1, heuristic = False):
         print("Best transport modes:", best_transport_modes)
         
     # Print the best ever individual
-        print(f"Best time and cost: {best_individual.fitness.values[0]}  {best_individual.fitness.values[1]}€")
+        hour = int(best_individual.fitness.values[0] // 60)
+        minute = int(best_individual.fitness.values[0] % 60)
+        print(f"Best time: {hour}h {minute}  and best cost {best_individual.fitness.values[1]}€")
         
     
     minFitnessValues, meanFitnessValues = logbook.select("min", "avg")
