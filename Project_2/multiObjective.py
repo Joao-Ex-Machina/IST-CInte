@@ -238,7 +238,7 @@ def plot_map(best_individual,individual):
 #PARAMETERS
 
 RANDOM_SEED = 42
-POPULATION_SIZE = 1000
+POPULATION_SIZE = 100
 P_CROSSOVER = 0.9
 P_MUTATION = 0.4
 HEURISTIC_SIZE = 0.25
@@ -351,15 +351,19 @@ def pareto_eval_tsp(individual, plane_matrix_time, bus_matrix_time, train_matrix
     
     return total_time, total_cost
 
-def plot_pareto_front(population):
+def plot_pareto_front(population, ideal_point, chosen_solution, centroid):
     times = [ind.fitness.values[0] for ind in population]
     costs = [ind.fitness.values[1] for ind in population]
-    plt.scatter(times, costs, c='blue')
+    plt.scatter(times, costs, c='blue', label='Pareto Front')
+    plt.scatter(ideal_point[0], ideal_point[1], c='green', label='Ideal Point')
+    plt.scatter(centroid[0], centroid[1], c='purple', label='Centroid')
+    plt.scatter(chosen_solution.fitness.values[0], chosen_solution.fitness.values[1],
+                c='red', label='Chosen Solution')
     plt.xlabel('Total Time')
     plt.ylabel('Total Cost')
-    plt.title('Pareto Front')
+    plt.title('Pareto Front with Ideal Point and Chosen Solution')
+    plt.legend()
     plt.show()
-
 
 def non_dominated_sort(population):
     """Sorts a population into non-dominated fronts."""
@@ -528,6 +532,45 @@ def offspring_setup():
         toolbox.register("mutate", mutate, indpb=0.2)
         toolbox.register("select", tools.selNSGA2)  # Selection
 
+def calculate_ideal_point(non_dominated):
+    objectives = [ind.fitness.values for ind in non_dominated]
+    
+    min_time = min(obj[0] for obj in objectives)
+    min_cost = min(obj[1] for obj in objectives)
+    
+    # As explained in classes
+    # The ideal point is get from the minima in the objective dimensions
+    ideal_point = (min_time, min_cost)
+    return ideal_point
+
+def calculate_centroid(non_dominated): # find the average point in the non-dominated front
+    objectives = np.array([ind.fitness.values for ind in non_dominated])
+    centroid = np.mean(objectives, axis=0)
+    return centroid
+
+def distance(individual, b): #vector distance between a solution and a explicit point
+    return np.linalg.norm(np.array(individual.fitness.values) - b)
+
+def select_solution(non_dominated, ideal_point, centroid):
+    
+    best_individual = None
+    smallest_combined_distance = float('inf')
+    
+    # Loop through each solution in the non-dominated front
+    for individual in non_dominated:
+        # Calculate distance to ideal point and centroid
+        dist_to_ideal = distance(individual, ideal_point)
+        dist_to_centroid = distance(individual, centroid)
+        
+        # average the distances, this ensures a to find a solution close to the I.P.
+        # that minimizes both dimensions
+        combined_distance = (dist_to_ideal + dist_to_centroid) / 2
+        
+        if combined_distance < smallest_combined_distance:
+            smallest_combined_distance = combined_distance
+            best_individual = individual
+    
+    return best_individual
 stats = tools.Statistics(key=lambda ind: ind.fitness.values)
 
 stats.register("avg", np.mean, axis = 0)
@@ -560,9 +603,11 @@ def main(use_cost=False, individual=False, transport = 1, heuristic = False):
 )
     
 
-    plot_pareto_front(result_population)
-
-    best_individual = tools.selBest(result_population, 1)[0]
+    non_dominated = tools.sortNondominated(result_population, len(result_population), first_front_only=True)[0]
+    non_dominated = tools.sortNondominated(result_population, len(result_population), first_front_only=True)[0]
+    ideal_point= calculate_ideal_point(non_dominated)
+    centroid= calculate_centroid(non_dominated)
+    best_individual = select_solution(non_dominated, ideal_point, centroid)
     if individual:
         # Get the best individual
         best_route = [cities[i] for i in best_individual]  # Convert indices to city names
@@ -577,7 +622,8 @@ def main(use_cost=False, individual=False, transport = 1, heuristic = False):
         hour = int(best_individual.fitness.values[0] // 60)
         minute = int(best_individual.fitness.values[0] % 60)
         print(f"Best time: {hour}h {minute}  and best cost {best_individual.fitness.values[1]}€")
-        
+    plot_pareto_front(result_population, ideal_point, best_individual, centroid)
+    
     
     minFitnessValues, meanFitnessValues = logbook.select("min", "avg")
     
