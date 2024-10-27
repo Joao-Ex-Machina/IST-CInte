@@ -244,9 +244,9 @@ def plot_map(best_individual,individual):
 
 RANDOM_SEED = 42
 POPULATION_SIZE = 100
-P_CROSSOVER = 0.9
-P_MUTATION = 0.4
-HEURISTIC_SIZE = 0.5
+P_CROSSOVER = 0.7
+P_MUTATION = 0.3
+HEURISTIC_SIZE = 1
 MAX_GENERATIONS = 100
 HALL_OF_FAME_SIZE = 15
 random.seed(RANDOM_SEED)
@@ -328,8 +328,10 @@ def pareto_eval_tsp(individual, plane_matrix_time, bus_matrix_time, train_matrix
     # Calculate total time and cost
     for i in range(len(route)):
         city1_idx = route[i]
+#        print("Le route")
+ #       print(route[i])
         city2_idx = route[(i + 1) % len(route)]
-
+        
         # Retrieve time and cost for each transport mode
         plane_time = plane_matrix_time[city1_idx, city2_idx]
         plane_cost = plane_matrix_cost[city1_idx, city2_idx]
@@ -337,35 +339,49 @@ def pareto_eval_tsp(individual, plane_matrix_time, bus_matrix_time, train_matrix
         bus_cost = bus_matrix_cost[city1_idx, city2_idx]
         train_time = train_matrix_time[city1_idx, city2_idx]
         train_cost = train_matrix_cost[city1_idx, city2_idx]
+        if np.isnan(plane_time):
+            plane_time = 99999999999
+        if np.isnan(plane_cost):
+            plane_cost = 99999999999
+        if np.isnan(bus_time):
+            bus_time = 99999999999
+        if np.isnan(bus_cost):
+            bus_cost = 99999999999
+        if np.isnan(train_time):
+            train_time = 99999999999
+        if np.isnan(train_cost):
+            train_cost = 99999999999
 
-        transport_mode = random.choice(['plane', 'bus', 'train'])
-        
+
+
+        transport_mode = transport_modes[i]
+
+  #      print(f"TMODE: {transport_mode}")
         # Accumulate time and cost based on the chosen transport mode
         if transport_mode == 'plane':
             total_time += plane_time
             total_cost += plane_cost
-            transport_modes[i] = 'plane'
         elif transport_mode == 'bus':
             total_time += bus_time
             total_cost += bus_cost
-            transport_modes[i] = 'bus'
         else:  # train
             total_time += train_time
             total_cost += train_cost
-            transport_modes[i] = 'train'    # Return both objectives: time and cost
-    
+            # Return both objectives: time and cost
+    #if (total_time < 99999 or total_cost < 9999999):
+    #    print("There is a valid solution somewhere")
     return total_time, total_cost
 
 def plot_pareto_front(population, ideal_point, chosen_solution, centroid):
     times = [ind.fitness.values[0] for ind in population]
     costs = [ind.fitness.values[1] for ind in population]
-    plt.scatter(times, costs, c='blue', label='Pareto Front')
+    plt.scatter(costs, times, c='blue', label='Pareto Front')
     plt.scatter(ideal_point[0], ideal_point[1], c='green', label='Ideal Point')
     plt.scatter(centroid[0], centroid[1], c='purple', label='Centroid')
     plt.scatter(chosen_solution.fitness.values[0], chosen_solution.fitness.values[1],
                 c='red', label='Chosen Solution')
-    plt.xlabel('Total Time')
-    plt.ylabel('Total Cost')
+    plt.ylabel('Total Time')
+    plt.xlabel('Total Cost')
     plt.title('Pareto Front with Ideal Point and Chosen Solution')
     plt.legend()
     plt.show()
@@ -569,15 +585,15 @@ def select_solution(non_dominated, ideal_point, centroid):
         
         # average the distances, this ensures a to find a solution close to the I.P.
         # that minimizes both dimensions
-        combined_distance = (dist_to_ideal + dist_to_centroid) / 2
+        combined_distance = (dist_to_ideal*1.5 + dist_to_centroid*0.5) / 2
         
         if combined_distance < smallest_combined_distance:
             smallest_combined_distance = combined_distance
             best_individual = individual
     
     return best_individual
-stats = tools.Statistics(key=lambda ind: ind.fitness.values)
 
+stats = tools.Statistics(key=lambda ind: ind.fitness.values)
 stats.register("avg", np.mean, axis = 0)
 stats.register("min", np.min, axis = 0)
 
@@ -608,7 +624,6 @@ def main(use_cost=False, individual=False, transport = 1, heuristic = False):
 )
     
 
-    non_dominated = tools.sortNondominated(result_population, len(result_population), first_front_only=True)[0]
     non_dominated = tools.sortNondominated(result_population, len(result_population), first_front_only=True)[0]
     ideal_point= calculate_ideal_point(non_dominated)
     centroid= calculate_centroid(non_dominated)
@@ -651,5 +666,5 @@ def main(use_cost=False, individual=False, transport = 1, heuristic = False):
     
 if __name__ == "__main__":
     # Set use_cost to True if you want to use cost, otherwise it will use time
-    main(use_cost=False, individual=False, transport = 3, heuristic = True)  # Change the use_cost to True to use cost, Change individual to True to only one type of transport
+    main(use_cost=True, individual=False, transport = 3, heuristic = True)  # Change the use_cost to True to use cost, Change individual to True to only one type of transport
                                                           # Trasport type 1: plane, 2: bus 3: train
