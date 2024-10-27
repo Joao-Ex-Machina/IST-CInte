@@ -21,7 +21,7 @@ def convert_time_to_minutes(time_str):
 
     # Check if the value is NaN using pd.isna() or a string that indicates no route
     if pd.isna(time_str) or time_str == 'N/A' or time_str == '0.0':
-        return 9999999999999  # Use very big num for no route
+        return 999999 # Use very big num for no route
 
     # Split the time string and handle cases where minutes are not specified
     if 'h' in time_str:
@@ -32,7 +32,7 @@ def convert_time_to_minutes(time_str):
             
             return hours * 60 + minutes
         except ValueError:
-            return 99999999999999
+            return 999999
     if '.' in time_str:
         try:
             parts = time_str.split('.')
@@ -41,11 +41,11 @@ def convert_time_to_minutes(time_str):
             
             return hours * 60 + 60 * minutes * 0.01
         except ValueError:
-            return 9999999999999999
+            return 999999
 
 def convert_cost(cost_str):
     if pd.isna(cost_str) or cost_str == 'N/A' or cost_str == '0.0':
-        return 99999999999999999  # Use very big num for no route
+        return 999999  # Use very big num for no route
     else:
         return float(cost_str)
 
@@ -149,7 +149,7 @@ def plot_map(best_individual,individual):
     
     return
 
-def select_n_best_rows_and_corresponding_columns(df, n):
+def select_n_best_rows_and_corresponding_columns(df,df2, n):
     """
     Select the top N rows with the fewest N/A values and create an NxN matrix 
     where columns correspond to the selected rows.
@@ -175,28 +175,28 @@ def select_n_best_rows_and_corresponding_columns(df, n):
 
     # Filter the DataFrame to keep only the selected rows
     filtered_df = df.loc[sorted_row_indices]
-
+    filtered_df2 = df2.loc[sorted_row_indices]
     # Get the selected city names (row indices)
     selected_cities = filtered_df.index.tolist()
 
     # Create an NxN DataFrame where both rows and columns correspond to the selected cities
     # Filter the original DataFrame to include only these rows and columns
     reduced_matrix = df.loc[selected_cities, selected_cities]
-
-    return reduced_matrix
+    reduced_matrix2 = df2.loc[selected_cities, selected_cities]
+    return reduced_matrix, reduced_matrix2
 
 #PARAMETERS
 
 NCITY = 30
-TYPE = 1
-RANDOM_SEED = 41
+TYPE = 2
+
 POPULATION_SIZE = 100
-P_CROSSOVER = 0.8
-P_MUTATION = 0.2
+P_CROSSOVER = 0.7
+P_MUTATION = 0.4
 HEURISTIC_SIZE = 1
 MAX_GENERATIONS = 100
 HALL_OF_FAME_SIZE = 15
-random.seed(RANDOM_SEED)
+
 
 
 # Load time and cost data, assuming both have city names as headers and index
@@ -232,14 +232,14 @@ if train_time_df.columns[-1].startswith('Unnamed'):
     
 if NCITY != 50: 
     if TYPE == 1:
-        plane_time_df = select_n_best_rows_and_corresponding_columns(plane_time_df, NCITY)
-        plane_cost_df = select_n_best_rows_and_corresponding_columns(plane_cost_df, NCITY)
+        plane_time_df, plane_cost_df = select_n_best_rows_and_corresponding_columns(plane_time_df,plane_cost_df, NCITY)
+
     if TYPE == 2:      
-        bus_time_df = select_n_best_rows_and_corresponding_columns(bus_time_df, NCITY)
-        bus_cost_df = select_n_best_rows_and_corresponding_columns(bus_cost_df, NCITY)
+        bus_time_df, bus_cost_df = select_n_best_rows_and_corresponding_columns(bus_time_df,bus_cost_df, NCITY)
+
     if TYPE == 3:
-        train_time_df = select_n_best_rows_and_corresponding_columns(train_time_df, NCITY)
-        train_cost_df = select_n_best_rows_and_corresponding_columns(train_cost_df, NCITY)
+        train_time_df, train_cost_df = select_n_best_rows_and_corresponding_columns(train_time_df, train_cost_df, NCITY)
+
 
 plane_time_df = plane_time_df.map(convert_time_to_minutes)
 plane_cost_df = plane_cost_df.map(convert_cost)
@@ -250,8 +250,8 @@ bus_cost_df = bus_cost_df.map(convert_cost)
 train_time_df = train_time_df.map(convert_time_to_minutes)
 train_cost_df = train_cost_df.map(convert_cost)
 
-# print(plane_time_df)
-# print(train_cost_df.columns)
+print(bus_time_df)
+# print(bus_cost_df.columns)
 
 def calculate_total_time_and_cost(best_route, best_transport_modes, df_plane_time, df_plane_cost, df_bus_time, df_bus_cost, df_train_time, df_train_cost):
     total_time = 0.0  # Use float for time
@@ -334,7 +334,7 @@ if NCITY != 50:
 # Get the list of cities (both origin and destination cities are now in index and columns)
 cities = list(df['City'])  # This assumes the cities are the same for both time_df and cost_df
 
-print(cities, len(cities))
+# print(cities, len(cities))
 # DEAP setup: Define fitness function (minimization problem)
 creator.create("FitnessMin", base.Fitness, weights=(-1.0,))  # Minimize distance
 creator.create("Individual", list, fitness=creator.FitnessMin)
@@ -347,13 +347,32 @@ def eval_tsp(individual, matrix):
 
     for i in range(num_cities):
         # Get city names from the individual (which are city indices)
-        city1_idx = individual[i]       # Index of the origin city
-        city2_idx = individual[(i + 1) % num_cities]  # Index of the destination city (wrap around at the end)
+        city1 = individual[i]       # Index of the origin city
+        city2 = individual[(i + 1) % num_cities]  # Index of the destination city (wrap around at the end)
         
-        # Access the value in the matrix using indices directly
-        total_value += matrix[city1_idx, city2_idx]
-        
+        if isinstance(city1, int) and isinstance(city2, int):
+            city1 = cities[city1]
+            city2 = cities[city2]
+            
+         # Access the value from the matrix and ensure it's numeric
+        try:
+            value = matrix.loc[city1, city2]
+            # Convert to numeric if necessary
+            value = pd.to_numeric(value, errors='coerce')
+            
+            # Handle any NaN or infinite values after conversion
+            if pd.isna(value) or not np.isfinite(value):
+                value = 99999  # Default penalty
 
+        except KeyError as e:
+            value = 99999  # Default penalty if cities are missing
+
+        # Add to total
+        total_value += value
+        if pd.isna(total_value):
+            print(f"Error: Accumulated total_value became NaN at segment {city1}-{city2}.")
+
+        #time , cost = calculate_total_time_and_cost(individual, ['plane' for _ in range(len(individual))],plane_time_df, plane_cost_df, bus_time_df, bus_cost_df, train_time_df, train_cost_df)
     return (total_value,)# Setup the DEAP toolbox
 
 def multi_eval_tsp(individual,plane_matrix, bus_matrix,train_matrix):
@@ -369,11 +388,11 @@ def multi_eval_tsp(individual,plane_matrix, bus_matrix,train_matrix):
         
         # # Replace NaN values with a very large number
         if np.isnan(plane):
-            plane = 9999999999999
+            plane = 999999
         if np.isnan(bus):
-            bus = 9999999999999
+            bus = 999999
         if np.isnan(train):
-            train = 9999999999999
+            train = 999999
         
         if plane < bus and plane < train: 
             total_time += plane
@@ -514,7 +533,7 @@ def setup_toolbox(use_cost=False, individual=False, transport = 1):
             matrix = bus_cost_df if use_cost else bus_time_df       
         elif transport == 3:
             matrix = train_cost_df if use_cost else train_time_df
-        toolbox.register("evaluate", eval_tsp, matrix=matrix.values)  # Register the evaluate function
+        toolbox.register("evaluate", eval_tsp, matrix=matrix)  # Register the evaluate function
         
         
     else:              
@@ -603,8 +622,7 @@ def main(use_cost=False, individual=False, transport = 1, heuristic = False):
         if min(minFitnessValues) < best_min:
             best_min = min(minFitnessValues)
             
-            best_min_fit = minFitnessValues
-            best_hof = hof
+            best_result_population = result_population
 
     print("Standard Deviation: ", np.mean(std_values))
     print("Mean Value: ", np.mean(min_values))
@@ -612,7 +630,7 @@ def main(use_cost=False, individual=False, transport = 1, heuristic = False):
 
 
     
-    best_individual = tools.selBest(result_population, 1)[0]
+    best_individual = tools.selBest(best_result_population, 1)[0]
     if individual:
         # Get the best individual
         best_route = [cities[i] for i in best_individual]  # Convert indices to city names
@@ -661,5 +679,5 @@ def main(use_cost=False, individual=False, transport = 1, heuristic = False):
     
 if __name__ == "__main__":
         # Set use_cost to True if you want to use cost, otherwise it will use time
-    main(use_cost=True, individual=True, transport = TYPE, heuristic = False)  # Change the use_cost to True to use cost, Change individual to True to only one type of transport
+    main(use_cost=False, individual=True, transport = TYPE, heuristic = False)  # Change the use_cost to True to use cost, Change individual to True to only one type of transport
                                                             # Trasport type 1: plane, 2: bus 3: train

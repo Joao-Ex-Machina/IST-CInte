@@ -26,6 +26,16 @@ In cases where all types of transport (plane, bus, train) are utilized, our popu
 ## Optional Heuristic 
 
 ## Results
+Train City = 23
+
+| #Cities | Plane mCost Mean | Plane mCost STD | Bus mCost Mean | Bus mCost STD | Train mCost Mean | Train mCost STD |
+|:-------:|:----------------:|-----------------|----------------|---------------|------------------|-----------------|
+|    30   |      2040.03     |      236.85     |      894.3     |   392275.16   |      1864.2      |    629204.29    |
+
+
+| #Cities | Plane mTime Mean | Plane mTime STD | Bus mTime Mean | Bus mTime STD | Train mTime Mean | Train mTime STD |
+|:-------:|:----------------:|-----------------|----------------|---------------|------------------|-----------------|
+|    30   |      2197.83     |      163.12     |     16814.06   |   379934.64   |      7997.4      |    627572.86    |
 
 # Multi-Objective Genetic Algorithm (MOGA)
 
