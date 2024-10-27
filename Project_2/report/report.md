@@ -37,6 +37,12 @@ Train City = 23
 |:-------:|:----------------:|-----------------|----------------|---------------|------------------|-----------------|
 |    30   |      2197.83     |      163.12     |     16814.06   |   379934.64   |      7997.4      |    627572.86    |
 
+| #Cities | EveryTransport mCost Mean | Every Trasnport mCost STD | Every Trasport mTime Mean | Every Trasport mTime STD |
+|:-------:|:-------------------------:|:-------------------------:|:-------------------------:|:------------------------:|
+|    10   |           336.0           |            7.34           |           710.0           |           8.82           |
+|    30   |           833.9           |           180.91          |          2005.77          |          223.70          |
+|    50   |          2202.17          |         866871.54         |          3868.27          |         820750.11        |
+
 # Multi-Objective Genetic Algorithm (MOGA)
 
 Our MOGA, has the same foundation of our SOGA, using a eaSimple variation with Elitism, with the option to use the same heuristic described before.
