@@ -24,22 +24,24 @@ def convert_time_to_minutes(time_str):
         return 9999999999999  # Use very big num for no route
 
     # Split the time string and handle cases where minutes are not specified
-    try:
-        parts = time_str.split('h')
-        hours = int(parts[0])
-        minutes = int(parts[1]) if len(parts) > 1 and parts[1] else 0
-        
-        return hours * 60 + minutes
-    except ValueError:
-        return 99999999999999
-    # try:
-    #     parts = time_str.split('')
-    #     hours = int(parts[0])
-    #     minutes = int(parts[1]) if len(parts) > 1 and parts[1] else 0
-        
-    #     return hours * 60 + 60 * minutes * 0.01
-    except ValueError:
-        return 9999999999999999
+    if 'h' in time_str:
+        try:
+            parts = time_str.split('h')
+            hours = int(parts[0])
+            minutes = int(parts[1]) if len(parts) > 1 and parts[1] else 0
+            
+            return hours * 60 + minutes
+        except ValueError:
+            return 99999999999999
+    if '.' in time_str:
+        try:
+            parts = time_str.split('.')
+            hours = int(parts[0])
+            minutes = int(parts[1]) if len(parts) > 1 and parts[1] else 0
+            
+            return hours * 60 + 60 * minutes * 0.01
+        except ValueError:
+            return 9999999999999999
 
 def convert_cost(cost_str):
     if pd.isna(cost_str) or cost_str == 'N/A' or cost_str == '0.0':
@@ -157,9 +159,9 @@ def plot_map(best_individual,individual):
 
 RANDOM_SEED = 41
 POPULATION_SIZE = 100
-P_CROSSOVER = 0.9
-P_MUTATION = 0.4
-HEURISTIC_SIZE = 1
+P_CROSSOVER = 0.8
+P_MUTATION = 0.9
+HEURISTIC_SIZE = 0.25
 MAX_GENERATIONS = 100
 HALL_OF_FAME_SIZE = 15
 random.seed(RANDOM_SEED)
@@ -208,8 +210,8 @@ train_cost_df = train_cost_df.map(convert_cost)
 # print(plane_cost_df)
 
 def calculate_total_time_and_cost(best_route, best_transport_modes, df_plane_time, df_plane_cost, df_bus_time, df_bus_cost, df_train_time, df_train_cost):
-    total_time = 0
-    total_cost = 0
+    total_time = 0.0  # Use float for time
+    total_cost = 0.0  # Use float for cost
     
     # Define dictionaries to map transport modes to the appropriate time and cost DataFrames
     time_dfs = {
@@ -223,11 +225,16 @@ def calculate_total_time_and_cost(best_route, best_transport_modes, df_plane_tim
         'bus': df_bus_cost,
         'train': df_train_cost
     }
-       
-   # Iterate through each leg of the route
+
+    # Iterate through each leg of the route
     for i in range(len(best_route)):
         city1 = best_route[i]
         city2 = best_route[(i + 1) % len(best_route)]
+        
+        if isinstance(city1, int) and isinstance(city2, int):
+            city1 = cities[city1]
+            city2 = cities[city2]
+        
         transport_mode = best_transport_modes[i]
     
         # Select the appropriate DataFrames for time and cost based on the transport mode
@@ -236,46 +243,28 @@ def calculate_total_time_and_cost(best_route, best_transport_modes, df_plane_tim
         
         # Retrieve time and cost between city1 and city2 from the selected DataFrames
         try:
-            time_value = df_time.loc[city1, city2]
-            cost_value = df_cost.loc[city1, city2]
+            time_value = df_time.loc[city1, city2]  # This should be a numeric value
+            cost_value = df_cost.loc[city1, city2]  # This should also be numeric
 
-            # print(time_value,city1,city2,transport_mode)
-            print(cost_value,city1,city2,transport_mode) 
+            print(f"From {city1} to {city2}: {transport_mode} - Time: {time_value} min, Cost: {cost_value} €")
+            if isinstance(time_value, pd.Series):
+                if len(time_value) > 1:
+                    time_value = time_value.iloc[0]
 
-            # Check for duplicates in total_time before adding
-            if isinstance(total_time, pd.Series) and total_time.index.duplicated().any():
-                total_time = total_time[~total_time.index.duplicated(keep='first')]
-            
+            if isinstance(cost_value, pd.Series):
+                if len(cost_value) > 1:
+                    cost_value = cost_value.iloc[0]
+
+            # Add the time and cost to the totals
             total_time += time_value
             total_cost += cost_value
             
         except KeyError:
-            return 0, 0 
-            continue
-
-        # # Add the cost and time for the return to the starting city to complete the route
-        # city1 = best_route[-1]
-        # city2 = best_route[0]
-        # transport_mode = best_transport_modes[-1]
-
-        # df_time = time_dfs[transport_mode]
-        # df_cost = cost_dfs[transport_mode]
-
-        # try:
-        #     time_value = df_time.loc[city1, city2]
-        #     cost_value = df_cost.loc[city1, city2]
-
-        #     # Check for duplicates in total_time before adding
-        #     if isinstance(total_time, pd.Series) and total_time.index.duplicated().any():
-        #         total_time = total_time[~total_time.index.duplicated(keep='first')]
-
-        #     total_time += time_value
-        #     total_cost += cost_value
-
-        # except KeyError:
-            return 0 , 0
+            # If there is no route between city1 and city2, return 0, 0
+            return 0,0 
 
     return total_time, total_cost
+
 
 if os.name == 'posix':  # For Unix-like systems (Linux, macOS)
     df = pd.read_csv(f'{directory}/xy.csv', delimiter=',')
@@ -319,41 +308,70 @@ def multi_eval_tsp(individual,plane_matrix, bus_matrix,train_matrix):
         city1_idx = route[i]
         city2_idx  = route[(i+1) % len(route)]
         
-        # Print index and column names
-              
+        City1 = cities[city1_idx]
+        City2 = cities[city2_idx]
         
         plane = plane_matrix[city1_idx,city2_idx]
         bus = bus_matrix[city1_idx,city2_idx]
         train = train_matrix[city1_idx,city2_idx]
         
+        # # Replace NaN values with a very large number
+        if np.isnan(plane):
+            plane = 9999999999999
+        if np.isnan(bus):
+            bus = 9999999999999
+        if np.isnan(train):
+            train = 9999999999999
+        
         if plane < bus and plane < train: 
             total_time += plane
             transport_modes[i] = 'plane'
+            
         elif bus < plane and bus < train:
             total_time += bus
             transport_modes[i] = 'bus'
+            
+            
         elif train < plane and train < bus:
             total_time += train
             transport_modes[i] = 'train'
+        else:
+            # Fallback for ties or invalid data
+            total_time += min(plane, bus, train)
+            transport_modes[i] = 'plane' if plane <= min(bus, train) else ('bus' if bus <= train else 'train')
+              
+    # time , cost = calculate_total_time_and_cost(route, transport_modes,plane_time_df, plane_cost_df, bus_time_df, bus_cost_df, train_time_df, train_cost_df)       
+    # print(time,total_time)
     return (total_time,)  # Tuple for DEAP compatibilityy2_idx]
 
+# def create_individual():
+#     while True:
+#         route = random.sample(list(range(len(cities))), len(cities))
+#         transport_modes = [random.choice(['plane', 'bus', 'train']) for _ in range(len(route))]
+#         total_time, total_cost = calculate_total_time_and_cost(route, transport_modes,plane_time_df, plane_cost_df, bus_time_df, bus_cost_df, train_time_df, train_cost_df)
+#         if total_time < 999999 or total_cost < 999999 :
+#             break;
+#     return creator.Individual([route, transport_modes])
+
 def create_individual():
-    while True:
-        route = random.sample(list(range(len(cities))), len(cities))
-        transport_modes = [random.choice(['plane', 'bus', 'train']) for _ in range(len(route))]
-        total_time, total_cost = calculate_total_time_and_cost(route, transport_modes,plane_time_df, plane_cost_df, bus_time_df, bus_cost_df, train_time_df, train_cost_df)
-        if total_time < 999999 or total_cost < 999999 :
-            break;
+ 
+    route = random.sample(list(range(len(cities))), len(cities))
+    transport_modes = [random.choice(['plane', 'bus', 'train']) for _ in range(len(route))]
+    
     return creator.Individual([route, transport_modes])
 
-def create_heuristic_individual():
-    while True:
-        route = heuristics()
-        transport_modes = [random.choice(['plane', 'bus', 'train']) for _ in range(len(route))]
-        total_time, total_cost = calculate_total_time_and_cost(route, transport_modes,plane_time_df, plane_cost_df, bus_time_df, bus_cost_df, train_time_df, train_cost_df)
-        if total_time < 999999 or total_cost < 9999999:
-            break;
+# def create_heuristic_individual():
 
+#     route = heuristics()
+#     transport_modes = [random.choice(['plane', 'bus', 'train']) for _ in range(len(route))]
+    
+#     return creator.Individual([route, transport_modes])
+
+def create_heuristic_individual():
+    
+    route = heuristics()
+    transport_modes = [random.choice(['plane', 'bus', 'train']) for _ in range(len(route))]
+     
     return creator.Individual([route, transport_modes])
 
 toolbox = base.Toolbox()
@@ -518,8 +536,9 @@ def main(use_cost=False, individual=False, transport = 1, heuristic = False):
     stats=stats,
     halloffame=hof,
     verbose=True
-)
-    
+)   
+
+
 
     
     best_individual = tools.selBest(result_population, 1)[0]
@@ -541,7 +560,14 @@ def main(use_cost=False, individual=False, transport = 1, heuristic = False):
         minute = int(best_individual.fitness.values[0] % 60)
         print(f"Best time: {hour} h {minute} min")
 
-    
+    if individual:
+        if transport == 1:
+            best_transport_modes = ['plane' for _ in range(len(best_route))]
+        elif transport == 2:
+            best_transport_modes = ['bus' for _ in range(len(best_route))]
+        elif transport == 3:
+            best_transport_modes = ['train' for _ in range(len(best_route))]
+            
     print("Total time:" , calculate_total_time_and_cost(best_route, best_transport_modes, plane_time_df, plane_cost_df, bus_time_df, bus_cost_df, train_time_df, train_cost_df))
 
     minFitnessValues, meanFitnessValues = logbook.select("min", "avg")

@@ -30,7 +30,7 @@ def eaSimpleWithElitism(population, toolbox, cxpb, mutpb, ngen, stats=None,
         print(logbook.stream)
 
     # Begin the generational process
-    for gen in range(1, ngen + 1):
+    for gen in range(1, ngen):
 
         # Select the next generation individuals
         offspring = toolbox.select(population, len(population) - hof_size)
