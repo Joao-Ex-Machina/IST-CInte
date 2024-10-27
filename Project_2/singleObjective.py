@@ -148,6 +148,23 @@ def plot_map(best_individual,individual):
     plt.show()
     
     return
+def reduced_matrix(train_time, train_cost,plane_time,plane_cost,bus_time,bus_cost,n):
+    
+    na_counts = train_time.isna().sum(axis=1)
+    
+    
+    sorted_row_indices = na_counts.nsmallest(n).index
+    filtered_df = train_time.loc[sorted_row_indices]
+    selected_cities = filtered_df.index.tolist()
+    
+    train_time_reduced = train_time.loc[selected_cities, selected_cities]
+    train_cost_reduced = train_cost.loc[selected_cities, selected_cities]
+    plane_time_reduced = plane_time.loc[selected_cities, selected_cities]
+    plane_cost_reduced = plane_cost.loc[selected_cities, selected_cities]
+    bus_time_reduced = bus_time.loc[selected_cities, selected_cities]
+    bus_cost_reduced = bus_cost.loc[selected_cities, selected_cities]
+    
+    return train_time_reduced, train_cost_reduced, plane_time_reduced, plane_cost_reduced, bus_time_reduced, bus_cost_reduced
 
 def select_n_best_rows_and_corresponding_columns(df,df2, n):
     """
@@ -187,7 +204,10 @@ def select_n_best_rows_and_corresponding_columns(df,df2, n):
 
 #PARAMETERS
 
-NCITY = 30
+HEURISTIC = False
+INDIVIDUAL = False
+USE_COST = True
+NCITY = 10
 TYPE = 2
 
 POPULATION_SIZE = 100
@@ -229,17 +249,18 @@ if plane_time_df.columns[-1].startswith('Unnamed'):
 if train_time_df.columns[-1].startswith('Unnamed'):
     train_time_df = train_time_df.iloc[:, :-1]
     
-    
-if NCITY != 50: 
-    if TYPE == 1:
-        plane_time_df, plane_cost_df = select_n_best_rows_and_corresponding_columns(plane_time_df,plane_cost_df, NCITY)
+if INDIVIDUAL:  
+    if NCITY != 50: 
+        if TYPE == 1:
+            plane_time_df, plane_cost_df = select_n_best_rows_and_corresponding_columns(plane_time_df,plane_cost_df, NCITY)
 
-    if TYPE == 2:      
-        bus_time_df, bus_cost_df = select_n_best_rows_and_corresponding_columns(bus_time_df,bus_cost_df, NCITY)
+        if TYPE == 2:      
+            bus_time_df, bus_cost_df = select_n_best_rows_and_corresponding_columns(bus_time_df,bus_cost_df, NCITY)
 
-    if TYPE == 3:
-        train_time_df, train_cost_df = select_n_best_rows_and_corresponding_columns(train_time_df, train_cost_df, NCITY)
-
+        if TYPE == 3:
+            train_time_df, train_cost_df = select_n_best_rows_and_corresponding_columns(train_time_df, train_cost_df, NCITY)
+else:
+    train_time_df, train_cost_df, plane_time_df, plane_cost_df, bus_time_df, bus_cost_df = reduced_matrix(train_time_df, train_cost_df,plane_time_df,plane_cost_df,bus_time_df,bus_cost_df,NCITY)
 
 plane_time_df = plane_time_df.map(convert_time_to_minutes)
 plane_cost_df = plane_cost_df.map(convert_cost)
@@ -250,7 +271,7 @@ bus_cost_df = bus_cost_df.map(convert_cost)
 train_time_df = train_time_df.map(convert_time_to_minutes)
 train_cost_df = train_cost_df.map(convert_cost)
 
-print(bus_time_df)
+# print(bus_time_df)
 # print(bus_cost_df.columns)
 
 def calculate_total_time_and_cost(best_route, best_transport_modes, df_plane_time, df_plane_cost, df_bus_time, df_bus_cost, df_train_time, df_train_cost):
@@ -321,15 +342,19 @@ if not duplicates.empty:
     # Remove the second encounter of duplicates (keep the first occurrence)
     df = df.drop_duplicates(subset='City', keep='first').reset_index(drop=True)
 
-if NCITY != 50:
-    if TYPE == 1:
-        df = df[df['City'].isin(plane_time_df.columns)]
-    if TYPE == 2:
-        df = df[df['City'].isin(bus_time_df.columns)]
-    if TYPE == 3:
-        df = df[df['City'].isin(train_time_df.columns)]
+if INDIVIDUAL:
+    if NCITY != 50:
+        if TYPE == 1:
+            df = df[df['City'].isin(plane_time_df.columns)]
+        if TYPE == 2:
+            df = df[df['City'].isin(bus_time_df.columns)]
+        if TYPE == 3:
+            df = df[df['City'].isin(train_time_df.columns)]
+            df.reset_index(drop=True, inplace=True)
+else:
+    df = df[df['City'].isin(train_time_df.columns)]
     df.reset_index(drop=True, inplace=True)
-        
+    
 # print(df)
 # Get the list of cities (both origin and destination cities are now in index and columns)
 cities = list(df['City'])  # This assumes the cities are the same for both time_df and cost_df
@@ -375,45 +400,55 @@ def eval_tsp(individual, matrix):
         #time , cost = calculate_total_time_and_cost(individual, ['plane' for _ in range(len(individual))],plane_time_df, plane_cost_df, bus_time_df, bus_cost_df, train_time_df, train_cost_df)
     return (total_value,)# Setup the DEAP toolbox
 
-def multi_eval_tsp(individual,plane_matrix, bus_matrix,train_matrix):
+def multi_eval_tsp(individual, plane_matrix, bus_matrix, train_matrix):
     route, transport_modes = individual
     total_time = 0
     for i in range(len(route)):
-        city1_idx = route[i]
-        city2_idx  = route[(i+1) % len(route)]
-         
-        plane = plane_matrix[city1_idx,city2_idx]
-        bus = bus_matrix[city1_idx,city2_idx]
-        train = train_matrix[city1_idx,city2_idx]
+        city1 = route[i]
+        city2 = route[(i + 1) % len(route)]
         
-        # # Replace NaN values with a very large number
-        if np.isnan(plane):
-            plane = 999999
-        if np.isnan(bus):
-            bus = 999999
-        if np.isnan(train):
-            train = 999999
+        if isinstance(city1, int) and isinstance(city2, int):
+            city1 = cities[city1]
+            city2 = cities[city2]
         
+        # Access the values from each transport matrix and ensure they're numeric
+        try:
+            plane = pd.to_numeric(plane_matrix.loc[city1, city2], errors='coerce')
+            bus = pd.to_numeric(bus_matrix.loc[city1, city2], errors='coerce')
+            train = pd.to_numeric(train_matrix.loc[city1, city2], errors='coerce')
+            
+            # Handle NaN or infinite values after conversion
+            if pd.isna(plane) or not np.isfinite(plane):
+                plane = 99999  # Default penalty
+            if pd.isna(bus) or not np.isfinite(bus):
+                bus = 99999
+            if pd.isna(train) or not np.isfinite(train):
+                train = 99999
+                
+        except KeyError as e:
+            print(f"KeyError: {e} - Cities {city1} or {city2} not found in the matrix.")
+            plane, bus, train = 99999, 99999, 99999  # Penalty if cities are missing
+        
+        # Select the mode with the minimum travel time and update total_time and transport_modes
         if plane < bus and plane < train: 
             total_time += plane
             transport_modes[i] = 'plane'
-            
         elif bus < plane and bus < train:
             total_time += bus
             transport_modes[i] = 'bus'
-            
-            
         elif train < plane and train < bus:
             total_time += train
             transport_modes[i] = 'train'
         else:
             # Fallback for ties or invalid data
-            total_time += min(plane, bus, train)
-            transport_modes[i] = 'plane' if plane <= min(bus, train) else ('bus' if bus <= train else 'train')
-              
-    # time , cost = calculate_total_time_and_cost(route, transport_modes,plane_time_df, plane_cost_df, bus_time_df, bus_cost_df, train_time_df, train_cost_df)       
-    # print(time,total_time)
-    return (total_time,)  # Tuple for DEAP compatibilityy2_idx]
+            min_time = min(plane, bus, train)
+            total_time += min_time
+            transport_modes[i] = 'plane' if plane == min_time else ('bus' if bus == min_time else 'train')
+
+        if pd.isna(total_time):
+            print(f"Error: Accumulated total_time became NaN at segment {city1}-{city2}.")
+                
+    return (total_time,)  # Tuple for DEAP compatibility
 
 # def create_individual():
 #     while True:
@@ -540,7 +575,7 @@ def setup_toolbox(use_cost=False, individual=False, transport = 1):
         plane_matrix = plane_cost_df if use_cost else plane_time_df  # Choose the matrix based on user input
         bus_matrix = bus_cost_df if use_cost else bus_time_df  # Choose the matrix based on user input
         train_matrix = train_cost_df if use_cost else train_time_df  # Choose the matrix based on user input
-        toolbox.register("evaluate", multi_eval_tsp, plane_matrix=plane_matrix.values, bus_matrix=bus_matrix.values, train_matrix = train_matrix.values )  # Register the evaluate function
+        toolbox.register("evaluate", multi_eval_tsp, plane_matrix=plane_matrix, bus_matrix=bus_matrix, train_matrix = train_matrix )  # Register the evaluate function
  
 def crossover(ind1, ind2):
     # Ordered crossover for cities
@@ -679,5 +714,5 @@ def main(use_cost=False, individual=False, transport = 1, heuristic = False):
     
 if __name__ == "__main__":
         # Set use_cost to True if you want to use cost, otherwise it will use time
-    main(use_cost=False, individual=True, transport = TYPE, heuristic = False)  # Change the use_cost to True to use cost, Change individual to True to only one type of transport
+    main(use_cost=USE_COST, individual=INDIVIDUAL, transport = TYPE, heuristic = HEURISTIC)  # Change the use_cost to True to use cost, Change individual to True to only one type of transport
                                                             # Trasport type 1: plane, 2: bus 3: train
