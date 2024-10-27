@@ -13,7 +13,7 @@ This project focuses on solving the Traveling Salesman Problem (TSP) using Evolu
 
 # Data Collection
 
-The cities selected for our dataset are detailed in the xy.csv file. We gathered data for the plane datasets from Google Flights (https://www.google.com/travel/flights?gl=PT&hl=en). For the bus datasets, we utilized BusBud (https://www.busbud.com/pt-pt). Train dataset information was collected from Omio (https://www.omio.com/companies/trains/comboios-de-portugal-y3ksc).
+The cities selected for our dataset are detailed in the xy.csv file. We gathered data for the plane datasets from [Google Flights](https://www.google.com/travel/flights?gl=PT&hl=en). For the bus datasets, we utilized [BusBud](https://www.busbud.com/pt-pt). Finally the Train dataset information was collected from [Omio](https://www.omio.com/companies/trains/comboios-de-portugal-y3ksc).
 
 # Single-Objective Genetic Algorithm (SOGA)
 
@@ -26,22 +26,24 @@ In cases where all types of transport (plane, bus, train) are utilized, our popu
 ## Optional Heuristic 
 
 ## Results
-Train City = 23
+
 
 | #Cities | Plane mCost Mean | Plane mCost STD | Bus mCost Mean | Bus mCost STD | Train mCost Mean | Train mCost STD |
 |:-------:|:----------------:|-----------------|----------------|---------------|------------------|-----------------|
-|    30   |      2040.03     |      236.85     |      894.3     |   392275.16   |      1864.2      |    629204.29    |
+|    30*   |      2040.03     |      236.85     |      894.3     |   392275.16   |      1864.2      |    629204.29    |
 
 
 | #Cities | Plane mTime Mean | Plane mTime STD | Bus mTime Mean | Bus mTime STD | Train mTime Mean | Train mTime STD |
 |:-------:|:----------------:|-----------------|----------------|---------------|------------------|-----------------|
-|    30   |      2197.83     |      163.12     |     16814.06   |   379934.64   |      7997.4      |    627572.86    |
+|    30*   |      2197.83     |      163.12     |     16814.06   |   379934.64   |      7997.4      |    627572.86    |
 
-| #Cities | EveryTransport mCost Mean | Every Trasnport mCost STD | Every Trasport mTime Mean | Every Trasport mTime STD |
-|:-------:|:-------------------------:|:-------------------------:|:-------------------------:|:------------------------:|
-|    10   |           336.0           |            7.34           |           710.0           |           8.82           |
-|    30   |           833.9           |           180.91          |          2005.77          |          223.70          |
-|    50   |          2202.17          |         866871.54         |          3868.27          |         820750.11        |
+| #Cities | EveryTransport mCost Mean | Every Transport mCost STD | Every Transport mTime Mean | Every Transport mTime STD |
+|:-------:|:-------------------------:|:-------------------------:|:--------------------------:|:-------------------------:|
+|   10    |           336.0           |           7.34            |           710.0            |           8.82            |
+|   30    |           833.9           |          180.91           |          2005.77           |          223.70           |
+|   50    |          2202.17          |         866871.54         |          3868.27           |         820750.11         |
+
+It is important to note that due to our train dataset being fairly sparse for the Train only tests, the number of cities targeted for it where 23 instead of 30, to avoid choosing invalid solutions.
 
 # Multi-Objective Genetic Algorithm (MOGA)
 
@@ -59,3 +61,13 @@ The Selection is now made using the NSGA-II algorithm:
 Finally for the solution extraction from the result population we first calculate two points for the final generation: the ideal point (the minima observed in the possble solutions for both objectives) and the centroid (the average of the non-dominated front solutions). By finding the solution that minimizes the vector distance to both points we extract a middle-ground solution that minimizes both monetary cost and time taken.
 
 ## Results
+
+We could not generate valid solutions for our dataset when using the MOGA, we suspect that this is once again due to the sparsity of our dataset. Therefore the results presented in this section are taken from the dataset given by Professor Horta.
+
+| #Cities | Cost for MinCost Solution | Time for MinCost Solution | Cost for MinTime Solution | Time for MinTime Solution |
+|:-------:|:-------------------------:|:-------------------------:|:--------------------------:|:-------------------------:|
+|   10    |           910.44           |           49h            |           1440.27            |           12h51m            |
+|   30    |          2954.71           |         185h43m          |           4740.34            |             46h             |
+|   50    |            3545            |         170h56m          |           5007.63            |           54h16m            |
+
+
