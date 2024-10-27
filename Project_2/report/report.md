@@ -23,14 +23,13 @@ In cases where we need to find the minimal cost of time for a single type of tra
 
 In cases where all types of transport (plane, bus, train) are utilized, our population individuals are represented by two lists: one list of integers, similar to the case with a single transport type, and another list of strings ["plane", "bus", "train"], indicating the mode of transport between two cities. The search space has a size of (#NumberOfCities! * 3^#NumberOfCities). We employed ordered crossover for the list of integers and uniform crossover for the transport type list. For mutation, we used shuffle indexing for the integer list and selected a random transport type for the other list. For selection, we utilized a tournament method of size 3.
 
-## Optional Heuristic 
 
 ## Results
-
 
 | #Cities | Plane mCost Mean | Plane mCost STD | Bus mCost Mean | Bus mCost STD | Train mCost Mean | Train mCost STD |
 |:-------:|:----------------:|-----------------|----------------|---------------|------------------|-----------------|
 |    30*   |      2040.03     |      236.85     |      894.3     |   392275.16   |      1864.2      |    629204.29    |
+
 
 
 | #Cities | Plane mTime Mean | Plane mTime STD | Bus mTime Mean | Bus mTime STD | Train mTime Mean | Train mTime STD |
@@ -44,6 +43,33 @@ In cases where all types of transport (plane, bus, train) are utilized, our popu
 |   50    |          2202.17          |         866871.54         |          3868.27           |         820750.11         |
 
 It is important to note that due to our train dataset being fairly sparse for the Train only tests, the number of cities targeted for it where 23 instead of 30, to avoid choosing invalid solutions.
+
+![Fitness evolution for Cost Minimization without Heuristics, cities=30](./images/50citymCost.png){width=85%}
+
+![Chosen Tour for All-Transport, Cost Minimization without Heuristics, cities=50](./images/50citymCost.png){width=85%}
+
+![Chosen Tour for All-Transport, Time Minimization without Heuristics, cities=50](./images/50citymTime.png){width=85%}
+
+Looking at the results, it's clear that the cost-effective choice is prioritizing bus transport, while in the time minimization problem the plane is the preferred method of transportation. The results emphasize the trade-off between budget and speed. 
+The dataset's sparsity led to numerous invalid solutions during algorithm execution, contributing to the high standard deviation.
+
+# Additional Heuristic 
+
+Our heuristic picks cities on a map by starting with the highest Y-coordinate on the left half, moving downward.
+
+Once finished, it switches to the right half, starting with the lowest Y-coordinate and moving upward. To maintain diversity, we divide the population by HEURISTIC_SIZE % of the total population and randomly select the rest.
+
+Despite applying heuristics, the results didn't show significant differences. This likely stems from our dataset values not correlating directly with city distances, making our heuristic solution less effective for this problem.
+
+| #Cities | EveryTransport mCost Mean | Every Trasnport mCost STD | Every Trasport mTime Mean | Every Trasport mTime STD |
+|:-------:|:-------------------------:|:-------------------------:|:-------------------------:|:------------------------:|
+|    10   |           336.0           |            7.87           |           710.0           |           9.37           |
+|    30   |           876.73          |           182.83          |           2046.4          |          251.84          |
+|    50   |           2158.4          |         866437.79         |          3778.12          |         820512.66        |
+
+![Chosen Tour for All-Transport, Cost Minimization with a Heuristics sze of 25%, cities=50](./images/50citymCostHeuristic.png){width=85%}
+
+\pagebreak
 
 # Multi-Objective Genetic Algorithm (MOGA)
 
@@ -70,4 +96,26 @@ We could not generate valid solutions for our dataset when using the MOGA, we su
 |   30    |          2954.71           |         185h43m          |           4740.34            |             46h             |
 |   50    |            3545            |         170h56m          |           5007.63            |           54h16m            |
 
+Notably our MOGA significanly benefited from Heuristics, for which we chose to maximize the respective parameter to 100%. 
 
+![Last generation Pareto front for cities=10](./images/pareto10.png){width=85%}
+
+![Last generation Pareto front for cities=50 and without Heuristics](./images/pareto50noH.png){width=85%}
+
+![Last generation Pareto front for cities=50](./images/pareto50.png){width=85%}
+
+![Chosen Tour for cities=10](./images/map10heuristic.png){width=85%}
+
+![Chosen Tour for cities=30](./images/map30heuristic.png){width=85%}
+
+![Chosen Tour for cities=50, without heuristic](./images/map50.png){width=85%}
+
+![Chosen Tour for cities=50](./images/map50heuristic.png){width=85%}
+
+\pagebreak
+
+## Conclusion
+
+Our main indrence found was the created dataset. Due to its sparsity and due to the method chosen for representing invalid solutions (with soft penalties instead of hard penalties) convergence for valid solutions was not always achievable.
+
+After using the MOGA with Heuristics with understood that the minimal differences that our heuristic solution was producing were indeed related to our dataset, since it performed distinctly well for the other dataset.

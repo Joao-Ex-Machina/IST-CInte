@@ -306,7 +306,7 @@ HEURISTIC_SIZE = 1
 MAX_GENERATIONS = 100
 HALL_OF_FAME_SIZE = 30
 random.seed(RANDOM_SEED)
-NCITY = 10;
+NCITY = 50;
 
 # Best cost: 2123.4 €
 # Best time: 64 h 35 min
@@ -757,5 +757,5 @@ def main(use_cost=False, individual=False, transport = 1, heuristic = False):
     
 if __name__ == "__main__":
     # Set use_cost to True if you want to use cost, otherwise it will use time
-    main(use_cost=True, individual=False, transport = 3, heuristic = True)  # Change the use_cost to True to use cost, Change individual to True to only one type of transport
+    main(use_cost=True, individual=False, transport = 3, heuristic = False)  # Change the use_cost to True to use cost, Change individual to True to only one type of transport
                                                           # Trasport type 1: plane, 2: bus 3: train
