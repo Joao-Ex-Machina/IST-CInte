@@ -10,6 +10,7 @@ import os
 import platform
 import argparse
 from elitism import eaSimpleWithElitism 
+from pymoo.indicators.hv import Hypervolume 
 
 parser = argparse.ArgumentParser(description="Load CSV from a specified directory")
 parser.add_argument("directory", type=str, help="The directory containing the CSV file")
@@ -240,6 +241,61 @@ def plot_map(best_individual,individual):
     return
     
 
+
+def reduced_matrix(train_time, train_cost,plane_time,plane_cost,bus_time,bus_cost,n):
+    
+    na_counts = train_time.isna().sum(axis=1)
+    
+    
+    sorted_row_indices = na_counts.nsmallest(n).index
+    filtered_df = train_time.loc[sorted_row_indices]
+    selected_cities = filtered_df.index.tolist()
+    
+    train_time_reduced = train_time.loc[selected_cities, selected_cities]
+    train_cost_reduced = train_cost.loc[selected_cities, selected_cities]
+    plane_time_reduced = plane_time.loc[selected_cities, selected_cities]
+    plane_cost_reduced = plane_cost.loc[selected_cities, selected_cities]
+    bus_time_reduced = bus_time.loc[selected_cities, selected_cities]
+    bus_cost_reduced = bus_cost.loc[selected_cities, selected_cities]
+    
+    return train_time_reduced, train_cost_reduced, plane_time_reduced, plane_cost_reduced, bus_time_reduced, bus_cost_reduced
+
+def select_n_best_rows_and_corresponding_columns(df,df2, n):
+    """
+    Select the top N rows with the fewest N/A values and create an NxN matrix 
+    where columns correspond to the selected rows.
+
+    Parameters:
+        df (pd.DataFrame): The DataFrame to process.
+        n (int): The number of top rows/columns to select.
+
+    Returns:
+        pd.DataFrame: An NxN DataFrame containing only the selected rows and their corresponding columns.
+    """
+    # Count the number of N/A values in each row
+    na_counts = df.isna().sum(axis=1)
+    
+    sorted_na_counts = na_counts.sort_values()
+    
+    # Print the ordered N/A counts per row for reference
+    print("Ordered N/A counts per row:")
+    print(sorted_na_counts)
+
+    # Sort rows by N/A counts (ascending) and select the top N rows
+    sorted_row_indices = na_counts.nsmallest(n).index
+
+    # Filter the DataFrame to keep only the selected rows
+    filtered_df = df.loc[sorted_row_indices]
+    filtered_df2 = df2.loc[sorted_row_indices]
+    # Get the selected city names (row indices)
+    selected_cities = filtered_df.index.tolist()
+
+    # Create an NxN DataFrame where both rows and columns correspond to the selected cities
+    # Filter the original DataFrame to include only these rows and columns
+    reduced_matrix = df.loc[selected_cities, selected_cities]
+    reduced_matrix2 = df2.loc[selected_cities, selected_cities]
+    return reduced_matrix, reduced_matrix2
+
 #PARAMETERS
 
 RANDOM_SEED = 42
@@ -248,8 +304,9 @@ P_CROSSOVER = 0.7
 P_MUTATION = 0.3
 HEURISTIC_SIZE = 1
 MAX_GENERATIONS = 100
-HALL_OF_FAME_SIZE = 15
+HALL_OF_FAME_SIZE = 30
 random.seed(RANDOM_SEED)
+NCITY = 10;
 
 # Best cost: 2123.4 €
 # Best time: 64 h 35 min
@@ -291,6 +348,11 @@ if train_time_df.columns[-1].startswith('Unnamed'):
 # print(train_time_df)
 # print(train_cost_df)
 
+
+
+if NCITY != 50: 
+    train_time_df, train_cost_df, plane_time_df, plane_cost_df, bus_time_df, bus_cost_df = reduced_matrix(train_time_df, train_cost_df,plane_time_df,plane_cost_df,bus_time_df,bus_cost_df,NCITY)
+
 plane_time_df = plane_time_df.map(convert_time_to_minutes)
 plane_cost_df = plane_cost_df.map(convert_cost)
 
@@ -311,7 +373,10 @@ if not duplicates.empty:
     # Remove the second encounter of duplicates (keep the first occurrence)
     df = df.drop_duplicates(subset='City', keep='first').reset_index(drop=True)
 
-# Get the list of cities (both origin and destination cities are now in index and columns)
+if NCITY != 50:
+    df = df[df['City'].isin(train_time_df.columns)]
+    df.reset_index(drop=True, inplace=True)
+  #Get the list of cities (both origin and destination cities are now in index and columns)
 cities = list(df['City'])  # This assumes the cities are the same for both time_df and cost_df
 
 # DEAP setup: Define fitness function (minimization problem)
@@ -428,17 +493,16 @@ def create_individual():
     return creator.Individual([route, transport_modes])
 
 def create_heuristic_individual():
-    route = heuristics()
+    
+    route = heuristics(df)
     transport_modes = [random.choice(['plane', 'bus', 'train']) for _ in range(len(route))]
+     
     return creator.Individual([route, transport_modes])
 
 toolbox = base.Toolbox()
 
-def heuristics():
-    if os.name == 'posix':  # For Unix-like systems (Linux, macOS)
-        df = pd.read_csv(f'{directory}/xy.csv', delimiter=',')
-    elif os.name == 'nt':  # For Windows
-        df = pd.read_csv(f'{directory}\\xy.csv', delimiter=',') 
+def heuristics(df=df):
+   
 
     route = []
     city_list = list(df['City'])
@@ -476,7 +540,7 @@ def heuristics():
     heuristic_route_indices = [city_list.index(city[0]) for city in heuristic_route]
 
     return heuristic_route_indices
-            
+             
 
 def population_tools(individual=False, heuristic=False):
     if heuristic: 
@@ -555,14 +619,27 @@ def offspring_setup():
 
 def calculate_ideal_point(non_dominated):
     objectives = [ind.fitness.values for ind in non_dominated]
-    
+
+# Calculate minimum values for both objectives
     min_time = min(obj[0] for obj in objectives)
     min_cost = min(obj[1] for obj in objectives)
-    
-    # As explained in classes
-    # The ideal point is get from the minima in the objective dimensions
+
+    # Find the individual with the minimum time and its respective cost
+    min_time_individual = next((ind for ind in non_dominated if ind.fitness.values[0] == min_time), None)
+    min_cost_individual = next((ind for ind in non_dominated if ind.fitness.values[1] == min_cost), None)
+
+    # Get the respective costs and times
+    min_time_cost = min_time_individual.fitness.values[1] if min_time_individual else None
+    min_cost_time = min_cost_individual.fitness.values[0] if min_cost_individual else None
+
+    # Print minimum objective values with their respective pairs
+    print(f"Minimum Time: {min_time} (Cost: {min_time_cost}) - Individual: {min_time_individual}")
+    print(f"Minimum Cost: {min_cost} (Time: {min_cost_time}) - Individual: {min_cost_individual}")
+
+    # Ideal point is derived from the minima in the objective dimensions
     ideal_point = (min_time, min_cost)
     return ideal_point
+
 
 def calculate_centroid(non_dominated): # find the average point in the non-dominated front
     objectives = np.array([ind.fitness.values for ind in non_dominated])
@@ -605,7 +682,10 @@ def main(use_cost=False, individual=False, transport = 1, heuristic = False):
     population_tools(individual, heuristic)
     setup_toolbox()  # Set up the toolbox with the selected matrix
     offspring_setup()
- 
+    
+    hypervolume_history = []  # To store hypervolume per generation
+    ref_point = [1.1 * 999999999, 1.1 * 999999999]  # Reference point should be worse than any feasible solution
+    
     # population = toolbox.population(n=POPULATION_SIZE)  # Create initial population of 100 individuals
     
     # result_population, logbook = algorithms.eaSimple(
@@ -624,6 +704,17 @@ def main(use_cost=False, individual=False, transport = 1, heuristic = False):
 )
     
 
+    # Calculate hypervolume for each generation
+#    for gen in logbook:
+ #       metric = Hypervolume(ref_point=ref_point)
+  #      pop_fitnesses = np.array([ind.fitness.values for ind in population in gen])
+   #     hypervolume_history.append(metric(pop_fitnesses))   
+    
+    plt.plot(hypervolume_history, color='blue')
+    plt.xlabel('Generations')
+    plt.ylabel('Hypervolume')
+    plt.title('Hypervolume Evolution over Generations')
+    plt.show()
     non_dominated = tools.sortNondominated(result_population, len(result_population), first_front_only=True)[0]
     ideal_point= calculate_ideal_point(non_dominated)
     centroid= calculate_centroid(non_dominated)
