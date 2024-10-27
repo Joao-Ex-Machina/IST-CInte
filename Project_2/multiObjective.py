@@ -8,8 +8,13 @@ from shapely.geometry import LineString
 import matplotlib.lines as mlines
 import os
 import platform
+import argparse
 from elitism import eaSimpleWithElitism 
 
+parser = argparse.ArgumentParser(description="Load CSV from a specified directory")
+parser.add_argument("directory", type=str, help="The directory containing the CSV file")
+args = parser.parse_args()
+directory=args.directory
 def convert_time_to_minutes(time_str):
     #print(time_str)  # For debugging purposes
 
@@ -136,9 +141,9 @@ def calculate_total_time_and_cost(best_route, best_transport_modes,
 def plot_map(best_individual,individual):
     # Load the CSV file
     if os.name == 'posix':  # For Unix-like OSs (Joao)
-        df = pd.read_csv('Examples/xy.csv', delimiter=',')
+        df = pd.read_csv(f'{directory}/xy.csv', delimiter=',')
     elif os.name == 'nt':  # For Windows (Xia)
-        df = pd.read_csv('Examples\\xy.csv', delimiter=',')
+        df = pd.read_csv(f'{directory}\\xy.csv', delimiter=',')
     # Create a GeoDataFrame with the geometry column
     df_geo = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df['Longitude'], df['Latitude']))
     
@@ -241,7 +246,7 @@ RANDOM_SEED = 42
 POPULATION_SIZE = 100
 P_CROSSOVER = 0.9
 P_MUTATION = 0.4
-HEURISTIC_SIZE = 0.25
+HEURISTIC_SIZE = 0.5
 MAX_GENERATIONS = 100
 HALL_OF_FAME_SIZE = 15
 random.seed(RANDOM_SEED)
@@ -256,23 +261,23 @@ random.seed(RANDOM_SEED)
 # Load time and cost data, assuming both have city names as headers and index
 
 if os.name == 'posix':  # For Unix-like systems (Linux, macOS)
-    plane_time_df = pd.read_csv('Examples/timeplane.csv', sep=',', index_col=0, header=0, dtype=str)
-    plane_cost_df = pd.read_csv('Examples/costplane.csv', sep=',', index_col=0, header=0, dtype=str)
+    plane_time_df = pd.read_csv(f'{directory}/timeplane.csv', sep=',', index_col=0, header=0, dtype=str)
+    plane_cost_df = pd.read_csv(f'{directory}/costplane.csv', sep=',', index_col=0, header=0, dtype=str)
     
-    bus_time_df = pd.read_csv('Examples/timebus.csv', sep=',', index_col=0, header=0, dtype=str)
-    bus_cost_df = pd.read_csv('Examples/costbus.csv', sep=',', index_col=0, header=0, dtype=str)
+    bus_time_df = pd.read_csv(f'{directory}/timebus.csv', sep=',', index_col=0, header=0, dtype=str)
+    bus_cost_df = pd.read_csv(f'{directory}/costbus.csv', sep=',', index_col=0, header=0, dtype=str)
     
-    train_time_df = pd.read_csv('Examples/timetrain.csv', sep=',', index_col=0, header=0, dtype=str)
-    train_cost_df = pd.read_csv('Examples/costtrain.csv', sep=',', index_col=0, header=0, dtype=str)
+    train_time_df = pd.read_csv(f'{directory}/timetrain.csv', sep=',', index_col=0, header=0, dtype=str)
+    train_cost_df = pd.read_csv(f'{directory}/costtrain.csv', sep=',', index_col=0, header=0, dtype=str)
 elif os.name == 'nt':  # For Windows
-    plane_time_df = pd.read_csv('Examples\\timeplane.csv', sep=',', index_col=0, header=0, dtype=str)
-    plane_cost_df = pd.read_csv('Examples\\costplane.csv', sep=',', index_col=0, header=0, dtype=str)
+    plane_time_df = pd.read_csv(f'{directory}\\timeplane.csv', sep=',', index_col=0, header=0, dtype=str)
+    plane_cost_df = pd.read_csv(f'{directory}\\costplane.csv', sep=',', index_col=0, header=0, dtype=str)
     
-    bus_time_df = pd.read_csv('Examples\\timebus.csv', sep=',', index_col=0, header=0, dtype=str)
-    bus_cost_df = pd.read_csv('Examples\\costbus.csv', sep=',', index_col=0, header=0, dtype=str)
+    bus_time_df = pd.read_csv(f'{directory}\\timebus.csv', sep=',', index_col=0, header=0, dtype=str)
+    bus_cost_df = pd.read_csv(f'{directory}\\costbus.csv', sep=',', index_col=0, header=0, dtype=str)
     
-    train_time_df = pd.read_csv('Examples\\timetrain.csv', sep=',', index_col=0, header=0, dtype=str)
-    train_cost_df = pd.read_csv('Examples\\costtrain.csv', sep=',', index_col=0, header=0, dtype=str)
+    train_time_df = pd.read_csv(f'{directory}\\timetrain.csv', sep=',', index_col=0, header=0, dtype=str)
+    train_cost_df = pd.read_csv(f'{directory}\\costtrain.csv', sep=',', index_col=0, header=0, dtype=str)
 
 if bus_time_df.columns[-1].startswith('Unnamed'):
     bus_time_df = bus_time_df.iloc[:, :-1]
@@ -296,9 +301,9 @@ train_time_df = train_time_df.map(convert_time_to_minutes)
 train_cost_df = train_cost_df.map(convert_cost)
 
 if os.name == 'posix':  # For Unix-like systems (Linux, macOS)
-    df = pd.read_csv('Examples/xy.csv', delimiter=',')
+    df = pd.read_csv(f'{directory}/xy.csv', delimiter=',')
 elif os.name == 'nt':  # For Windows
-   df = pd.read_csv('Examples\\xy.csv', delimiter=',')
+   df = pd.read_csv(f'{directory}\\xy.csv', delimiter=',')
 
 duplicates = df[df['City'].duplicated(keep=False)]  # This will return all duplicate entries
 
@@ -415,9 +420,9 @@ toolbox = base.Toolbox()
 
 def heuristics():
     if os.name == 'posix':  # For Unix-like systems (Linux, macOS)
-        df = pd.read_csv('Examples/xy.csv', delimiter=',')
+        df = pd.read_csv(f'{directory}/xy.csv', delimiter=',')
     elif os.name == 'nt':  # For Windows
-        df = pd.read_csv('Examples\\xy.csv', delimiter=',') 
+        df = pd.read_csv(f'{directory}\\xy.csv', delimiter=',') 
 
     route = []
     city_list = list(df['City'])
