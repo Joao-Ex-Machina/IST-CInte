@@ -24,20 +24,20 @@ def convert_time_to_minutes(time_str):
         return 9999999999999  # Use very big num for no route
 
     # Split the time string and handle cases where minutes are not specified
-    # try:
-    #     parts = time_str.split('h')
-    #     hours = int(parts[0])
-    #     minutes = int(parts[1]) if len(parts) > 1 and parts[1] else 0
-        
-    #     return hours * 60 + minutes
-    # except ValueError:
-    #     return 99999999999999
     try:
-        parts = time_str.split('.')
+        parts = time_str.split('h')
         hours = int(parts[0])
         minutes = int(parts[1]) if len(parts) > 1 and parts[1] else 0
         
-        return hours * 60 + 60 * minutes * 0.01
+        return hours * 60 + minutes
+    except ValueError:
+        return 99999999999999
+    # try:
+    #     parts = time_str.split('')
+    #     hours = int(parts[0])
+    #     minutes = int(parts[1]) if len(parts) > 1 and parts[1] else 0
+        
+    #     return hours * 60 + 60 * minutes * 0.01
     except ValueError:
         return 9999999999999999
 
@@ -48,75 +48,7 @@ def convert_cost(cost_str):
         return float(cost_str)
 
 
-def calculate_total_time_and_cost(best_route, best_transport_modes, 
-                                  df_plane_time, df_plane_cost, 
-                                  df_bus_time, df_bus_cost, 
-                                  df_train_time, df_train_cost):
-    total_time = 0
-    total_cost = 0
-    
-    # Define dictionaries to map transport modes to the appropriate time and cost DataFrames
-    time_dfs = {
-        'plane': df_plane_time,
-        'bus': df_bus_time,
-        'train': df_train_time
-    }
-    
-    cost_dfs = {
-        'plane': df_plane_cost,
-        'bus': df_bus_cost,
-        'train': df_train_cost
-    }
-    
-   # Iterate through each leg of the route
-    for i in range(len(best_route) - 1):
-        city1 = best_route[i]
-        city2 = best_route[i + 1]
-        transport_mode = best_transport_modes[i]
-    
-        # Select the appropriate DataFrames for time and cost based on the transport mode
-        df_time = time_dfs[transport_mode]
-        df_cost = cost_dfs[transport_mode]
-        
-        # Retrieve time and cost between city1 and city2 from the selected DataFrames
-        try:
-            time_value = df_time.loc[city1, city2]
-            cost_value = df_cost.loc[city1, city2]
 
-            # Check for duplicates in total_time before adding
-            if isinstance(total_time, pd.Series) and total_time.index.duplicated().any():
-                total_time = total_time[~total_time.index.duplicated(keep='first')]
-            
-            total_time += time_value
-            total_cost += cost_value
-            
-        except KeyError:
-            return 0, 0 
-            continue
-
-        # Add the cost and time for the return to the starting city to complete the route
-        city1 = best_route[-1]
-        city2 = best_route[0]
-        transport_mode = best_transport_modes[-1]
-
-        df_time = time_dfs[transport_mode]
-        df_cost = cost_dfs[transport_mode]
-
-        try:
-            time_value = df_time.loc[city1, city2]
-            cost_value = df_cost.loc[city1, city2]
-
-            # Check for duplicates in total_time before adding
-            if isinstance(total_time, pd.Series) and total_time.index.duplicated().any():
-                total_time = total_time[~total_time.index.duplicated(keep='first')]
-
-            total_time += time_value
-            total_cost += cost_value
-
-        except KeyError:
-            return 0 , 0
-
-    return total_time, total_cost
 
 def plot_map(best_individual,individual):
     # Load the CSV file
@@ -141,7 +73,7 @@ def plot_map(best_individual,individual):
     matched_countries = world_data[world_data['ADMIN'].isin(countrys)]
 
     # Create the plot
-    print(matched_countries.geometry)
+    # print(matched_countries.geometry)
     axis = matched_countries.plot(color='white', edgecolor='black')
 
     # Plot your GeoDataFrame on top of the map
@@ -225,8 +157,8 @@ def plot_map(best_individual,individual):
 
 RANDOM_SEED = 41
 POPULATION_SIZE = 100
-P_CROSSOVER = 0.7
-P_MUTATION = 0.9
+P_CROSSOVER = 0.9
+P_MUTATION = 0.4
 HEURISTIC_SIZE = 1
 MAX_GENERATIONS = 100
 HALL_OF_FAME_SIZE = 15
@@ -263,9 +195,6 @@ if plane_time_df.columns[-1].startswith('Unnamed'):
 if train_time_df.columns[-1].startswith('Unnamed'):
     train_time_df = train_time_df.iloc[:, :-1]
 
-# print(train_time_df)
-# print(train_cost_df)
-
 plane_time_df = plane_time_df.map(convert_time_to_minutes)
 plane_cost_df = plane_cost_df.map(convert_cost)
 
@@ -274,6 +203,79 @@ bus_cost_df = bus_cost_df.map(convert_cost)
 
 train_time_df = train_time_df.map(convert_time_to_minutes)
 train_cost_df = train_cost_df.map(convert_cost)
+
+# print(plane_time_df)
+# print(plane_cost_df)
+
+def calculate_total_time_and_cost(best_route, best_transport_modes, df_plane_time, df_plane_cost, df_bus_time, df_bus_cost, df_train_time, df_train_cost):
+    total_time = 0
+    total_cost = 0
+    
+    # Define dictionaries to map transport modes to the appropriate time and cost DataFrames
+    time_dfs = {
+        'plane': df_plane_time,
+        'bus': df_bus_time,
+        'train': df_train_time
+    }
+    
+    cost_dfs = {
+        'plane': df_plane_cost,
+        'bus': df_bus_cost,
+        'train': df_train_cost
+    }
+       
+   # Iterate through each leg of the route
+    for i in range(len(best_route)):
+        city1 = best_route[i]
+        city2 = best_route[(i + 1) % len(best_route)]
+        transport_mode = best_transport_modes[i]
+    
+        # Select the appropriate DataFrames for time and cost based on the transport mode
+        df_time = time_dfs[transport_mode]
+        df_cost = cost_dfs[transport_mode]
+        
+        # Retrieve time and cost between city1 and city2 from the selected DataFrames
+        try:
+            time_value = df_time.loc[city1, city2]
+            cost_value = df_cost.loc[city1, city2]
+
+            # print(time_value,city1,city2,transport_mode)
+            print(cost_value,city1,city2,transport_mode) 
+
+            # Check for duplicates in total_time before adding
+            if isinstance(total_time, pd.Series) and total_time.index.duplicated().any():
+                total_time = total_time[~total_time.index.duplicated(keep='first')]
+            
+            total_time += time_value
+            total_cost += cost_value
+            
+        except KeyError:
+            return 0, 0 
+            continue
+
+        # # Add the cost and time for the return to the starting city to complete the route
+        # city1 = best_route[-1]
+        # city2 = best_route[0]
+        # transport_mode = best_transport_modes[-1]
+
+        # df_time = time_dfs[transport_mode]
+        # df_cost = cost_dfs[transport_mode]
+
+        # try:
+        #     time_value = df_time.loc[city1, city2]
+        #     cost_value = df_cost.loc[city1, city2]
+
+        #     # Check for duplicates in total_time before adding
+        #     if isinstance(total_time, pd.Series) and total_time.index.duplicated().any():
+        #         total_time = total_time[~total_time.index.duplicated(keep='first')]
+
+        #     total_time += time_value
+        #     total_cost += cost_value
+
+        # except KeyError:
+            return 0 , 0
+
+    return total_time, total_cost
 
 if os.name == 'posix':  # For Unix-like systems (Linux, macOS)
     df = pd.read_csv(f'{directory}/xy.csv', delimiter=',')
@@ -294,7 +296,6 @@ creator.create("FitnessMin", base.Fitness, weights=(-1.0,))  # Minimize distance
 creator.create("Individual", list, fitness=creator.FitnessMin)
 
 
-
 # Function to evaluate the TSP solution (time or cost matrix)
 def eval_tsp(individual, matrix):
     total_value = 0
@@ -307,6 +308,7 @@ def eval_tsp(individual, matrix):
         
         # Access the value in the matrix using indices directly
         total_value += matrix[city1_idx, city2_idx]
+        
 
     return (total_value,)# Setup the DEAP toolbox
 
@@ -339,10 +341,7 @@ def create_individual():
     while True:
         route = random.sample(list(range(len(cities))), len(cities))
         transport_modes = [random.choice(['plane', 'bus', 'train']) for _ in range(len(route))]
-        total_time, total_cost = calculate_total_time_and_cost(
-    route, transport_modes,
-                plane_time_df, bus_time_df, train_time_df, 
-                plane_cost_df, bus_cost_df, train_cost_df)
+        total_time, total_cost = calculate_total_time_and_cost(route, transport_modes,plane_time_df, plane_cost_df, bus_time_df, bus_cost_df, train_time_df, train_cost_df)
         if total_time < 999999 or total_cost < 999999 :
             break;
     return creator.Individual([route, transport_modes])
@@ -351,10 +350,7 @@ def create_heuristic_individual():
     while True:
         route = heuristics()
         transport_modes = [random.choice(['plane', 'bus', 'train']) for _ in range(len(route))]
-        total_time, total_cost = calculate_total_time_and_cost(
-                route, transport_modes,
-                plane_time_df, bus_time_df, train_time_df, 
-                plane_cost_df, bus_cost_df, train_cost_df)
+        total_time, total_cost = calculate_total_time_and_cost(route, transport_modes,plane_time_df, plane_cost_df, bus_time_df, bus_cost_df, train_time_df, train_cost_df)
         if total_time < 999999 or total_cost < 9999999:
             break;
 
@@ -546,6 +542,8 @@ def main(use_cost=False, individual=False, transport = 1, heuristic = False):
         print(f"Best time: {hour} h {minute} min")
 
     
+    print("Total time:" , calculate_total_time_and_cost(best_route, best_transport_modes, plane_time_df, plane_cost_df, bus_time_df, bus_cost_df, train_time_df, train_cost_df))
+
     minFitnessValues, meanFitnessValues = logbook.select("min", "avg")
  #   total_time, total_cost = calculate_total_time_and_cost(
   #  best_route, best_transport_modes,
@@ -566,5 +564,5 @@ def main(use_cost=False, individual=False, transport = 1, heuristic = False):
     
 if __name__ == "__main__":
     # Set use_cost to True if you want to use cost, otherwise it will use time
-    main(use_cost=False, individual=False, transport = 3, heuristic = False)  # Change the use_cost to True to use cost, Change individual to True to only one type of transport
+    main(use_cost=True, individual=False, transport = 1, heuristic = True)  # Change the use_cost to True to use cost, Change individual to True to only one type of transport
                                                           # Trasport type 1: plane, 2: bus 3: train
