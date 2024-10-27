@@ -53,12 +53,7 @@ def convert_cost(cost_str):
 
 
 def plot_map(best_individual,individual):
-    # Load the CSV file
-    if os.name == 'posix':  # For Unix-like OSs (Joao)
-        df = pd.read_csv(f'{directory}/xy.csv', delimiter=',')
-    elif os.name == 'nt':  # For Windows (Xia)
-        df = pd.read_csv(f'{directory}\\xy.csv', delimiter=',')
-    # Create a GeoDataFrame with the geometry column
+    
     df_geo = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df['Longitude'], df['Latitude']))
     
     
@@ -153,15 +148,52 @@ def plot_map(best_individual,individual):
     plt.show()
     
     return
+
+def select_n_best_rows_and_corresponding_columns(df, n):
+    """
+    Select the top N rows with the fewest N/A values and create an NxN matrix 
+    where columns correspond to the selected rows.
+
+    Parameters:
+        df (pd.DataFrame): The DataFrame to process.
+        n (int): The number of top rows/columns to select.
+
+    Returns:
+        pd.DataFrame: An NxN DataFrame containing only the selected rows and their corresponding columns.
+    """
+    # Count the number of N/A values in each row
+    na_counts = df.isna().sum(axis=1)
     
+    sorted_na_counts = na_counts.sort_values()
+    
+    # Print the ordered N/A counts per row for reference
+    print("Ordered N/A counts per row:")
+    print(sorted_na_counts)
+
+    # Sort rows by N/A counts (ascending) and select the top N rows
+    sorted_row_indices = na_counts.nsmallest(n).index
+
+    # Filter the DataFrame to keep only the selected rows
+    filtered_df = df.loc[sorted_row_indices]
+
+    # Get the selected city names (row indices)
+    selected_cities = filtered_df.index.tolist()
+
+    # Create an NxN DataFrame where both rows and columns correspond to the selected cities
+    # Filter the original DataFrame to include only these rows and columns
+    reduced_matrix = df.loc[selected_cities, selected_cities]
+
+    return reduced_matrix
 
 #PARAMETERS
 
+NCITY = 30
+TYPE = 1
 RANDOM_SEED = 41
 POPULATION_SIZE = 100
 P_CROSSOVER = 0.8
-P_MUTATION = 0.9
-HEURISTIC_SIZE = 0.25
+P_MUTATION = 0.2
+HEURISTIC_SIZE = 1
 MAX_GENERATIONS = 100
 HALL_OF_FAME_SIZE = 15
 random.seed(RANDOM_SEED)
@@ -196,6 +228,18 @@ if plane_time_df.columns[-1].startswith('Unnamed'):
 
 if train_time_df.columns[-1].startswith('Unnamed'):
     train_time_df = train_time_df.iloc[:, :-1]
+    
+    
+if NCITY != 50: 
+    if TYPE == 1:
+        plane_time_df = select_n_best_rows_and_corresponding_columns(plane_time_df, NCITY)
+        plane_cost_df = select_n_best_rows_and_corresponding_columns(plane_cost_df, NCITY)
+    if TYPE == 2:      
+        bus_time_df = select_n_best_rows_and_corresponding_columns(bus_time_df, NCITY)
+        bus_cost_df = select_n_best_rows_and_corresponding_columns(bus_cost_df, NCITY)
+    if TYPE == 3:
+        train_time_df = select_n_best_rows_and_corresponding_columns(train_time_df, NCITY)
+        train_cost_df = select_n_best_rows_and_corresponding_columns(train_cost_df, NCITY)
 
 plane_time_df = plane_time_df.map(convert_time_to_minutes)
 plane_cost_df = plane_cost_df.map(convert_cost)
@@ -207,7 +251,7 @@ train_time_df = train_time_df.map(convert_time_to_minutes)
 train_cost_df = train_cost_df.map(convert_cost)
 
 # print(plane_time_df)
-# print(plane_cost_df)
+# print(train_cost_df.columns)
 
 def calculate_total_time_and_cost(best_route, best_transport_modes, df_plane_time, df_plane_cost, df_bus_time, df_bus_cost, df_train_time, df_train_cost):
     total_time = 0.0  # Use float for time
@@ -277,9 +321,20 @@ if not duplicates.empty:
     # Remove the second encounter of duplicates (keep the first occurrence)
     df = df.drop_duplicates(subset='City', keep='first').reset_index(drop=True)
 
+if NCITY != 50:
+    if TYPE == 1:
+        df = df[df['City'].isin(plane_time_df.columns)]
+    if TYPE == 2:
+        df = df[df['City'].isin(bus_time_df.columns)]
+    if TYPE == 3:
+        df = df[df['City'].isin(train_time_df.columns)]
+    df.reset_index(drop=True, inplace=True)
+        
+# print(df)
 # Get the list of cities (both origin and destination cities are now in index and columns)
 cities = list(df['City'])  # This assumes the cities are the same for both time_df and cost_df
 
+print(cities, len(cities))
 # DEAP setup: Define fitness function (minimization problem)
 creator.create("FitnessMin", base.Fitness, weights=(-1.0,))  # Minimize distance
 creator.create("Individual", list, fitness=creator.FitnessMin)
@@ -307,10 +362,7 @@ def multi_eval_tsp(individual,plane_matrix, bus_matrix,train_matrix):
     for i in range(len(route)):
         city1_idx = route[i]
         city2_idx  = route[(i+1) % len(route)]
-        
-        City1 = cities[city1_idx]
-        City2 = cities[city2_idx]
-        
+         
         plane = plane_matrix[city1_idx,city2_idx]
         bus = bus_matrix[city1_idx,city2_idx]
         train = train_matrix[city1_idx,city2_idx]
@@ -369,18 +421,15 @@ def create_individual():
 
 def create_heuristic_individual():
     
-    route = heuristics()
+    route = heuristics(df)
     transport_modes = [random.choice(['plane', 'bus', 'train']) for _ in range(len(route))]
      
     return creator.Individual([route, transport_modes])
 
 toolbox = base.Toolbox()
 
-def heuristics():
-    if os.name == 'posix':  # For Unix-like systems (Linux, macOS)
-        df = pd.read_csv(f'{directory}/xy.csv', delimiter=',')
-    elif os.name == 'nt':  # For Windows
-        df = pd.read_csv(f'{directory}\\xy.csv', delimiter=',') 
+def heuristics(df=df):
+   
 
     route = []
     city_list = list(df['City'])
@@ -425,7 +474,7 @@ def population_tools(individual=False, heuristic=False):
         if individual:
             toolbox.register("indices", random.sample, range(len(cities)), len(cities))  # Create a random individual
             toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.indices)
-            toolbox.register("indices", heuristics)  # Create a random individual
+            toolbox.register("indices", heuristics, df = df)  # Create a random individual
             toolbox.register("heuristic_individual", tools.initIterate, creator.Individual, toolbox.indices)
         else:
             toolbox.register("individual", create_individual)
@@ -447,6 +496,7 @@ def population_tools(individual=False, heuristic=False):
                    
     else:
         if individual:
+            
             toolbox.register("indices", random.sample, range(len(cities)), len(cities))  # Create a random individual
             toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.indices)
         else:  
@@ -515,29 +565,50 @@ stats.register("min", np.min)
 # Create the hall of fame object
 hof = tools.HallOfFame(HALL_OF_FAME_SIZE)
 
+# Define a function to select columns with the least amounts of NaN and 9999999
+
 # Run the Genetic Algorithm
 def main(use_cost=False, individual=False, transport = 1, heuristic = False):   
-    population_tools(individual, heuristic)
-    setup_toolbox(use_cost,individual,transport)  # Set up the toolbox with the selected matrix
-    offspring_setup(individual)
- 
-    # population = toolbox.population(n=POPULATION_SIZE)  # Create initial population of 100 individuals
     
-    # result_population, logbook = algorithms.eaSimple(
-    #     population, toolbox, cxpb=P_CROSSOVER, mutpb=P_MUTATION, ngen=MAX_GENERATIONS, stats=stats, verbose=False)
+    std_values = []
+    min_values = []
+    best_min = 9999999
+    for i in range(30):
+        RANDOM_SEED = i
+        random.seed(RANDOM_SEED)
+        population_tools(individual, heuristic)
+        setup_toolbox(use_cost,individual,transport)  # Set up the toolbox with the selected matrix
+        offspring_setup(individual)
     
-    # Solution with elitism, the best individuals are kept in the hall of fame
-    result_population, logbook = eaSimpleWithElitism(
-    toolbox.population(n=POPULATION_SIZE),
-    toolbox,
-    cxpb=P_CROSSOVER,
-    mutpb=P_MUTATION,
-    ngen=MAX_GENERATIONS,
-    stats=stats,
-    halloffame=hof,
-    verbose=True
-)   
+        # population = toolbox.population(n=POPULATION_SIZE)  # Create initial population of 100 individuals
+        
+        # result_population, logbook = algorithms.eaSimple(
+        #     population, toolbox, cxpb=P_CROSSOVER, mutpb=P_MUTATION, ngen=MAX_GENERATIONS, stats=stats, verbose=False)
+        
+        # Solution with elitism, the best individuals are kept in the hall of fame
+        result_population, logbook = eaSimpleWithElitism(
+        toolbox.population(n=POPULATION_SIZE),
+        toolbox,
+        cxpb=P_CROSSOVER,
+        mutpb=P_MUTATION,
+        ngen=MAX_GENERATIONS,
+        stats=stats,
+        halloffame=hof,
+        verbose=True
+    )  
+        minFitnessValues, meanFitnessValues = logbook.select("min", "avg") 
+        std_values.append(np.std(minFitnessValues))
+        min_values.append(min(minFitnessValues))
+    
+        if min(minFitnessValues) < best_min:
+            best_min = min(minFitnessValues)
+            
+            best_min_fit = minFitnessValues
+            best_hof = hof
 
+    print("Standard Deviation: ", np.mean(std_values))
+    print("Mean Value: ", np.mean(min_values))
+    
 
 
     
@@ -589,6 +660,6 @@ def main(use_cost=False, individual=False, transport = 1, heuristic = False):
     plot_map(best_individual,individual)
     
 if __name__ == "__main__":
-    # Set use_cost to True if you want to use cost, otherwise it will use time
-    main(use_cost=True, individual=False, transport = 1, heuristic = True)  # Change the use_cost to True to use cost, Change individual to True to only one type of transport
-                                                          # Trasport type 1: plane, 2: bus 3: train
+        # Set use_cost to True if you want to use cost, otherwise it will use time
+    main(use_cost=True, individual=True, transport = TYPE, heuristic = False)  # Change the use_cost to True to use cost, Change individual to True to only one type of transport
+                                                            # Trasport type 1: plane, 2: bus 3: train
