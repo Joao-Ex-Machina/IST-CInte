@@ -441,9 +441,9 @@ def plot_pareto_front(population, ideal_point, chosen_solution, centroid):
     times = [ind.fitness.values[0] for ind in population]
     costs = [ind.fitness.values[1] for ind in population]
     plt.scatter(costs, times, c='blue', label='Pareto Front')
-    plt.scatter(ideal_point[0], ideal_point[1], c='green', label='Ideal Point')
-    plt.scatter(centroid[0], centroid[1], c='purple', label='Centroid')
-    plt.scatter(chosen_solution.fitness.values[0], chosen_solution.fitness.values[1],
+    plt.scatter(ideal_point[1], ideal_point[0], c='green', label='Ideal Point')
+    plt.scatter(centroid[1], centroid[0], c='purple', label='Centroid')
+    plt.scatter(chosen_solution.fitness.values[1], chosen_solution.fitness.values[0],
                 c='red', label='Chosen Solution')
     plt.ylabel('Total Time')
     plt.xlabel('Total Cost')
@@ -629,8 +629,8 @@ def calculate_ideal_point(non_dominated):
     min_cost_individual = next((ind for ind in non_dominated if ind.fitness.values[1] == min_cost), None)
 
     # Get the respective costs and times
-    min_time_cost = min_time_individual.fitness.values[1] if min_time_individual else None
-    min_cost_time = min_cost_individual.fitness.values[0] if min_cost_individual else None
+    min_time_cost = min_time_individual.fitness.values[0] if min_time_individual else None
+    min_cost_time = min_cost_individual.fitness.values[1] if min_cost_individual else None
 
     # Print minimum objective values with their respective pairs
     print(f"Minimum Time: {min_time} (Cost: {min_time_cost}) - Individual: {min_time_individual}")
@@ -716,6 +716,7 @@ def main(use_cost=False, individual=False, transport = 1, heuristic = False):
     plt.title('Hypervolume Evolution over Generations')
     plt.show()
     non_dominated = tools.sortNondominated(result_population, len(result_population), first_front_only=True)[0]
+    print (non_dominated)
     ideal_point= calculate_ideal_point(non_dominated)
     centroid= calculate_centroid(non_dominated)
     best_individual = select_solution(non_dominated, ideal_point, centroid)
@@ -757,5 +758,5 @@ def main(use_cost=False, individual=False, transport = 1, heuristic = False):
     
 if __name__ == "__main__":
     # Set use_cost to True if you want to use cost, otherwise it will use time
-    main(use_cost=True, individual=False, transport = 3, heuristic = False)  # Change the use_cost to True to use cost, Change individual to True to only one type of transport
+    main(use_cost=True, individual=False, transport = 3, heuristic = True)  # Change the use_cost to True to use cost, Change individual to True to only one type of transport
                                                           # Trasport type 1: plane, 2: bus 3: train
